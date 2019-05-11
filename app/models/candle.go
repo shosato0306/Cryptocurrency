@@ -45,7 +45,7 @@ func (c *Candle) Create() error {
 
 func (c *Candle) Save() error {
 	cmd := fmt.Sprintf("UPDATE %s SET open = ?, close = ?, high = ?, low = ?, volume = ? WHERE time = ?", c.TableName())
-	_, err := DbConnection.Exec(cmd, c.Time.Format(time.RFC3339), c.Open, c.Close, c.High, c.Low, c.Volume)
+	_, err := DbConnection.Exec(cmd, c.Open, c.Close, c.High, c.Low, c.Volume, c.Time.Format(time.RFC3339))
 	if err != nil {
 		return err
 	}
@@ -78,9 +78,38 @@ func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, durati
 		currentCandle.High = price
 	} else if currentCandle.Low >= price {
 		currentCandle.Low = price
+	} else {
 	}
 	currentCandle.Volume += ticker.Volume
 	currentCandle.Close = price
 	currentCandle.Save()
 	return false
+}
+
+func GetAllCandle(productCode string, duration time.Duration, limit int) (dfCandle *DataFrameCandle, err error) {
+	tableName := GetCandleTableName(productCode, duration)
+	cmd := fmt.Sprintf(`SELECT * FROM (
+		SELECT time, open, close, high, low, volume FROM %s ORDER BY time DESC LIMIT ?
+		) ORDER BY time ASC;`, tableName)
+	rows, err := DbConnection.Query(cmd, limit)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	dfCandle = &DataFrameCandle{}
+	dfCandle.ProductCode = productCode
+	dfCandle.Duration = duration
+	for rows.Next() {
+		var candle Candle
+		candle.ProductCode = productCode
+		candle.Duration = duration
+		rows.Scan(&candle.Time, &candle.Open, &candle.Close, &candle.High, &candle.Low, &candle.Volume)
+		dfCandle.Candles = append(dfCandle.Candles, candle)
+	}
+	err = rows.Err()
+	if err != nil {
+		return
+	}
+	return dfCandle, nil
 }
