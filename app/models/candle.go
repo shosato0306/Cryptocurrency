@@ -17,9 +17,9 @@ type Candle struct {
 	Volume      float64       `json:"volume"`
 }
 
-func NewCandle(ProductCode string, duration time.Duration, timeDate time.Time, open, close, high, low, volume float64) *Candle {
+func NewCandle(productCode string, duration time.Duration, timeDate time.Time, open, close, high, low, volume float64) *Candle {
 	return &Candle{
-		ProductCode,
+		productCode,
 		duration,
 		timeDate,
 		open,
@@ -78,7 +78,6 @@ func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, durati
 		currentCandle.High = price
 	} else if currentCandle.Low >= price {
 		currentCandle.Low = price
-	} else {
 	}
 	currentCandle.Volume += ticker.Volume
 	currentCandle.Close = price

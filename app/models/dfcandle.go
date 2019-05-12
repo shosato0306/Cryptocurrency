@@ -1,18 +1,20 @@
 package models
 
 import (
+	"cryptocurrency/tradingalgo"
 	"time"
 
 	"github.com/markcheno/go-talib"
 )
 
 type DataFrameCandle struct {
-	ProductCode string        `json:"product_code"`
-	Duration    time.Duration `json:"duration"`
-	Candles     []Candle      `json:"candles"`
-	Smas        []Sma         `json:"smas,omitempty"`
-	Emas        []Ema         `json:"emas,omitempty"`
-	BBands      *BBands       `json:"bbands,omitempty"`
+	ProductCode   string         `json:"product_code"`
+	Duration      time.Duration  `json:"duration"`
+	Candles       []Candle       `json:"candles"`
+	Smas          []Sma          `json:"smas,omitempty"`
+	Emas          []Ema          `json:"emas,omitempty"`
+	BBands        *BBands        `json:"bbands,omitempty"`
+	IchimokuCloud *IchimokuCloud `json:"ichimoku,omitempty"`
 }
 
 type Sma struct {
@@ -31,6 +33,14 @@ type BBands struct {
 	Up   []float64 `json:"up,omitempty"`
 	Mid  []float64 `json:"mid,omitempty"`
 	Down []float64 `json:"down,omitempty"`
+}
+
+type IchimokuCloud struct {
+	Tenkan  []float64 `json:"tenkan,omitempty"`
+	Kijun   []float64 `json:"kijun,omitempty"`
+	SenkouA []float64 `json:"senkoua,omitempty"`
+	SenkouB []float64 `json:"senkoub,omitempty"`
+	Chikou  []float64 `json:"chikou,omitempty"`
 }
 
 func (df *DataFrameCandle) Times() []time.Time {
@@ -112,6 +122,22 @@ func (df *DataFrameCandle) AddBBands(n int, k float64) bool {
 			Up:   up,
 			Mid:  mid,
 			Down: down,
+		}
+		return true
+	}
+	return false
+}
+
+func (df *DataFrameCandle) AddIchimoku() bool {
+	tenkanN := 9
+	if len(df.Closes()) >= tenkanN {
+		tenkan, kijun, senkouA, senkouB, chikou := tradingalgo.IchimokuCloud(df.Closes())
+		df.IchimokuCloud = &IchimokuCloud{
+			Tenkan:  tenkan,
+			Kijun:   kijun,
+			SenkouA: senkouA,
+			SenkouB: senkouB,
+			Chikou:  chikou,
 		}
 		return true
 	}
