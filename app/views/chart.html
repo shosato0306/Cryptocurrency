@@ -28,7 +28,7 @@
                 interval: 1000 * 3
             },
             candlestick:{
-                product_code: 'BTC_JPY',
+                product_code: 'BTC_USD',
                 duration: '1m',
                 limit: 365,
                 numViews: 5,
@@ -49,6 +49,15 @@
                 periods: [],
                 values: []
             },
+            bbands: {
+                enable: false,
+                indexes: [],
+                n: 20,
+                k: 2,
+                up: [],
+                mid: [],
+                down: []
+            },
         };
 
         function initConfigValues(){
@@ -57,6 +66,10 @@
             config.sma.values = [];
             config.ema.indexes = [];
             config.ema.values = [];
+            config.bbands.indexes = [];
+            config.bbands.up = [];
+            config.bbands.mid = [];
+            config.bbands.down = [];
         }
 
         function drawChart(dataTable) {
@@ -109,6 +122,17 @@
                 }
             }
 
+            if (config.bbands.enable == true) {
+                for (i = 0; i < config.bbands.indexes.length; i++) {
+                    options.series[config.bbands.indexes[i]] = {
+                        type: 'line',
+                        color: 'blue',
+                        lineWidth: 1
+                    };
+                    view.columns.push(config.candlestick.numViews + config.bbands.indexes[i])
+                }
+            }
+
             var controlWrapper = new google.visualization.ControlWrapper({
                 'controlType': 'ChartRangeFilter',
                 'containerId': 'filter_div',
@@ -152,6 +176,12 @@
                 params["emaPeriod3"] = config.ema.periods[2];
             }
 
+            if (config.bbands.enable == true) {
+                params["bbands"] = true;
+                params["bbandsN"] = config.bbands.n;
+                params["bbandsK"] = config.bbands.k;
+            }
+
             $.get("/api/candle/", params).done(function (data) {
                 initConfigValues();
                 var dataTable = new google.visualization.DataTable();
@@ -184,6 +214,26 @@
                     }
                 }
 
+                if (data['bbands'] != undefined) {
+                    var n = data['bbands']['n'];
+                    var k = data['bbands']['k'];
+                    var up = data['bbands']['up'];
+                    var mid = data['bbands']['mid'];
+                    var down = data['bbands']['down'];
+                    config.dataTable.index += 1;
+                    config.bbands.indexes[0] = config.dataTable.index;
+                    config.dataTable.index += 1;
+                    config.bbands.indexes[1] = config.dataTable.index;
+                    config.dataTable.index += 1;
+                    config.bbands.indexes[2] = config.dataTable.index;
+                    dataTable.addColumn('number', 'BBands Up(' + n + ',' + k + ')');
+                    dataTable.addColumn('number', 'BBands Mid(' + n + ',' + k + ')');
+                    dataTable.addColumn('number', 'BBands Down(' + n + ',' + k + ')');
+                    config.bbands.up = up;
+                    config.bbands.mid = mid;
+                    config.bbands.down = down;
+                }
+
                 var googleChartData = [];
                 var candles = data["candles"];
 
@@ -209,6 +259,24 @@
                             } else {
                                 datas.push(config.ema.values[j][i]);
                             }
+                        }
+                    }
+
+                    if (data["bbands"] != undefined) {
+                        if (config.bbands.up[i] == 0) {
+                            datas.push(null);
+                        } else {
+                            datas.push(config.bbands.up[i]);
+                        }
+                        if (config.bbands.mid[i] == 0) {
+                            datas.push(null);
+                        } else {
+                            datas.push(config.bbands.mid[i]);
+                        }
+                        if (config.bbands.down[i] == 0) {
+                            datas.push(null);
+                        } else {
+                            datas.push(config.bbands.down[i]);
                         }
                     }
 
@@ -276,6 +344,23 @@
                 config.ema.periods[2] = this.value;
                 send();
             });
+
+            $('#inputBBands').change(function() {
+                if (this.checked === true) {
+                    config.bbands.enable = true;
+                } else {
+                    config.bbands.enable = false;
+                }
+                send();
+            });
+            $("#inputBBandsN").change(function() {
+                config.bbands.n = this.value;
+                send();
+            });
+            $("#inputBBandsK").change(function() {
+                config.bbands.k = this.value;
+                send();
+            });
         }
 
     </script>
@@ -300,6 +385,12 @@
     Period<input id="inputEmaPeriod1" type="text" value="7" style="width: 15px;">
     <input id="inputEmaPeriod2" type="text" value="14" style="width: 15px;">
     <input id="inputEmaPeriod3" type="text" value="50" style="width: 15px;">
+</div>
+
+<div>
+    BBands <input id="inputBBands" type="checkbox">
+    N <input id="inputBBandsN" type="text" value="20" style="width: 15px;">
+    K <input id="inputBBandsK" type="text" value="2" style="width: 15px;">
 </div>
 
 <div id="dashboard_div">
