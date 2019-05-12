@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chart</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        function send(){
+            var params = {
+                "product_code": "BTC_USD",
+                "limit": 10,
+                "duration": "1s"
+            }
+            $.get("/api/candle", params).done(function(data) {
+                console.log(data);
+                var candles = data["candles"]
+                $("#dashboard_div").append(candles[0].open + "<br>");
+            })
+        }
+        setInterval(send, 1000 * 3)
+        window.onload = function (){
+            send();
+        }
+    </script>
+</head>
+<body>
+    <div id="dashboard_div"></div>
+</body>
+</html>
