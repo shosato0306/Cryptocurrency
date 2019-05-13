@@ -260,3 +260,47 @@ func (df *DataFrameCandle) OptimizeEma() (performance float64, bestPeriod1 int, 
 	}
 	return performance, bestPeriod1, bestPeriod2
 }
+
+func (df *DataFrameCandle) BackTestBb(n int, k float64) *SignalEvents {
+	lenCandles := len(df.Candles)
+
+	if lenCandles <= n {
+		return nil
+	}
+
+	signalEvents := &SignalEvents{}
+	bbUp, _, bbDown := talib.BBands(df.Closes(), n, k, k, 0)
+	for i := 1; i < lenCandles; i++ {
+		if i < n {
+			continue
+		}
+		if bbDown[i-1] > df.Candles[i-1].Close && bbDown[i] <= df.Candles[i].Close {
+			signalEvents.Buy(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+		if bbUp[i-1] < df.Candles[i-1].Close && bbUp[i] >= df.Candles[i].Close {
+			signalEvents.Sell(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+	}
+	return signalEvents
+}
+
+func (df *DataFrameCandle) OptimizeBb() (performance float64, bestN int, bestK float64) {
+	bestN = 20
+	bestK = 2.0
+
+	for n := 10; n < 60; n++ {
+		for k := 1.9; k < 2.1; k += 0.1 {
+			signalEvents := df.BackTestBb(n, k)
+			if signalEvents == nil {
+				continue
+			}
+			profit := signalEvents.Profit()
+			if performance < profit {
+				performance = profit
+				bestN = n
+				bestK = k
+			}
+		}
+	}
+	return performance, bestN, bestK
+}
