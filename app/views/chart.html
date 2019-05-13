@@ -99,6 +99,12 @@
                 periods: [],
                 values: []
             },
+            events: {
+                enable: false,
+                indexes: [],
+                values: [],
+                first: null
+            }
         };
 
         function initConfigValues(){
@@ -125,6 +131,8 @@
             config.hv.indexes = [];
             config.hv.periods = [];
             config.hv.values = [];
+            config.events.indexes = [];
+            config.events.values = [];
         }
 
         function drawChart(dataTable) {
@@ -196,6 +204,17 @@
                     };
                     view.columns.push(config.candlestick.numViews + config.ichimoku.indexes[i]);
                 }
+            }
+
+            if (config.events.enable == true && config.events.indexes.length > 0){
+                options.series[config.events.indexes[0]] = {
+                    'type': 'line',
+                    tooltip: 'none',
+                    enableInteractivity: false,
+                    lineWidth: 0
+                };
+                view.columns.push(config.candlestick.numViews + config.events.indexes[0]);
+                view.columns.push(config.candlestick.numViews + config.events.indexes[1]);
             }
 
             if (config.volume.enable == true) {
@@ -385,6 +404,10 @@
                 params["hvPeriod3"] = config.hv.periods[2];
             }
 
+            if (config.events.enable == true) {
+                params["events"] = true;
+            }
+
             $.get("/api/candle/", params).done(function (data) {
                 initConfigValues();
                 var dataTable = new google.visualization.DataTable();
@@ -526,6 +549,26 @@
                     }
                 }
 
+                if (data['events'] != undefined) {
+                    config.dataTable.index += 1;
+                    config.events.indexes[0] = config.dataTable.index;
+                    config.dataTable.index += 1;
+                    config.events.indexes[1] = config.dataTable.index;
+
+                    config.events.values = data['events']['signals'];
+                    config.events.first = config.events.values.shift();
+
+                    dataTable.addColumn('number', 'Marker');
+                    dataTable.addColumn({type:'string', role:'annotation'});
+
+                    console.log(data);
+
+                    if (data['events']['profit'] != undefined) {
+                        profit = "$" + String(Math.round(data['events']['profit'] * 100) / 100);
+                        $('#profit').html("Change:" + profit);
+                    }
+                }
+
                 var googleChartData = [];
                 var candles = data["candles"];
 
@@ -597,6 +640,21 @@
                             datas.push(null);
                         } else {
                             datas.push(config.ichimoku.chikou[i]);
+                        }
+                    }
+
+                    if (data['events'] != undefined) {
+                        var event = config.events.first
+                        if (event == undefined) {
+                            datas.push(null);
+                            datas.push(null);
+                        }else if(event.time == candle.time) {
+                            datas.push(candle.high + 1);
+                            datas.push(event.side);
+                            config.events.first = config.events.values.shift();
+                        }else{
+                            datas.push(null);
+                            datas.push(null);
                         }
                     }
 
@@ -789,6 +847,16 @@
                 send();
             });
 
+            $('#inputEvents').change(function() {
+                if (this.checked === true) {
+                    config.events.enable = true;
+                } else {
+                    config.events.enable = false;
+                    $('#profit').html("");
+                }
+                send();
+            });
+
         }
 
     </script>
@@ -846,6 +914,10 @@
     Period<input id="inputHvPeriod1" type="text" value="21" style="width: 15px;">
     <input id="inputHvPeriod2" type="text" value="63" style="width: 15px;">
     <input id="inputHvPeriod3" type="text" value="252" style="width: 15px;">
+</div>
+
+<div>
+    Events <input id="inputEvents" type="checkbox"> <div id="profit"></div>
 </div>
 
 <div id="dashboard_div">

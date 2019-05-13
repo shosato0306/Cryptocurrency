@@ -19,6 +19,7 @@ type DataFrameCandle struct {
 	Rsi           *Rsi           `json:"rsi,omitempty"`
 	Macd          *Macd          `json:"macd,omitempty"`
 	Hvs           []Hv           `json:"hvs,omitempty"`
+	Events        *SignalEvents  `json:"events,omitempty"`
 }
 
 type Sma struct {
@@ -200,6 +201,15 @@ func (df *DataFrameCandle) AddHv(period int) bool {
 			Period: period,
 			Values: tradingalgo.Hv(df.Closes(), period),
 		})
+		return true
+	}
+	return false
+}
+
+func (df *DataFrameCandle) AddEvents(timeTime time.Time) bool {
+	SignalEvents := GetSignalEventsAfterTime(timeTime)
+	if len(SignalEvents.Signals) > 0 {
+		df.Events = SignalEvents
 		return true
 	}
 	return false
