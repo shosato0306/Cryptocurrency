@@ -67,6 +67,7 @@ func GetCandle(productCode string, duration time.Duration, dateTime time.Time) *
 func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, duration time.Duration) bool {
 	currentCandle := GetCandle(productCode, duration, ticker.TruncateDateTime(duration))
 	price := ticker.GetMidPrice()
+	// DB にまだ対象 duration の Candle 情報が格納されていない場合は、新規に Candle を作成し DB に格納する。
 	if currentCandle == nil {
 		candle := NewCandle(productCode, duration, ticker.TruncateDateTime(duration),
 			price, price, price, price, ticker.Volume)
@@ -74,6 +75,7 @@ func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, durati
 		return true
 	}
 
+	// DB にすでに対象 duration の Candle 情報が格納されており、最高値、最安値を更新している場合は DB のレコードを更新する。
 	if currentCandle.High <= price {
 		currentCandle.High = price
 	} else if currentCandle.Low >= price {

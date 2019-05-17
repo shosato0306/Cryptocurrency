@@ -35,10 +35,13 @@ type SignalEvents struct {
 	Signals []SignalEvent `json:"signals,omitempty"`
 }
 
+// Backtest 時には新しい SignalEvents オブジェクトのアドレスを返す
 func NewSignalEvents() *SignalEvents {
 	return &SignalEvents{}
 }
 
+// 実際に取引を行っている場合(Backtest == False)の場合の処理
+// DB から指定した個数分だけ最新の signalevent 情報を取得する
 func GetSignalEventsByCount(loadEvents int) *SignalEvents {
 	cmd := fmt.Sprintf(`SELECT * FROM (
         SELECT time, product_code, side, price, size FROM %s WHERE product_code = ? ORDER BY time DESC LIMIT ? )

@@ -13,10 +13,18 @@ import (
 	"cryptocurrency/config"
 )
 
-var templates = template.Must(template.ParseFiles("app/views/chart.html"))
+var chart_templates = template.Must(template.ParseFiles("app/views/chart.html"))
+var index_templates = template.Must(template.ParseFiles("app/views/index.html"))
 
 func viewChartHandler(w http.ResponseWriter, r *http.Request) {
-	err := templates.ExecuteTemplate(w, "chart.html", nil)
+	err := chart_templates.ExecuteTemplate(w, "chart.html", nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func viewIndexHandler(w http.ResponseWriter, r *http.Request) {
+	err := index_templates.ExecuteTemplate(w, "index.html", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -188,18 +196,11 @@ func apiCandleHandler(w http.ResponseWriter, r *http.Request) {
 	events := r.URL.Query().Get("events")
 	if events != "" {
 		if config.Config.BackTest {
-			performance, p1, p2 := df.OptimizeBb()
-			fmt.Println("##########")
-			log.Println(performance, p1, p2)
-			fmt.Println("##########")
-			if performance > 0 {
-				df.Events = df.BackTestBb(p1, p2)
-			}
+			df.Events = Ai.SignalEvents.CollectAfter(df.Candles[0].Time)
 		} else {
 			firstTime := df.Candles[0].Time
 			df.AddEvents(firstTime)
 		}
-
 	}
 
 	js, err := json.Marshal(df)
@@ -211,7 +212,10 @@ func apiCandleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartWebServer() error {
+	http.Handle("/app/static/css/", http.StripPrefix("/app/static/css/", http.FileServer(http.Dir("app/static/css/"))))
+	http.Handle("/app/static/js/", http.StripPrefix("/app/static/js/", http.FileServer(http.Dir("app/static/js/"))))
 	http.HandleFunc("/api/candle/", apiMakeHandler(apiCandleHandler))
 	http.HandleFunc("/chart/", viewChartHandler)
+	http.HandleFunc("/", viewIndexHandler)
 	return http.ListenAndServe(fmt.Sprintf(":%d", config.Config.Port), nil)
 }

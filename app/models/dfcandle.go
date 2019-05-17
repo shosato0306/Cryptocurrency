@@ -1,10 +1,12 @@
 package models
 
 import (
+	"sort"
 	"time"
 
 	"github.com/markcheno/go-talib"
 
+	"cryptocurrency/config"
 	"cryptocurrency/tradingalgo"
 )
 
@@ -207,9 +209,9 @@ func (df *DataFrameCandle) AddHv(period int) bool {
 }
 
 func (df *DataFrameCandle) AddEvents(timeTime time.Time) bool {
-	SignalEvents := GetSignalEventsAfterTime(timeTime)
-	if len(SignalEvents.Signals) > 0 {
-		df.Events = SignalEvents
+	signalEvents := GetSignalEventsAfterTime(timeTime)
+	if len(signalEvents.Signals) > 0 {
+		df.Events = signalEvents
 		return true
 	}
 	return false
@@ -288,7 +290,7 @@ func (df *DataFrameCandle) OptimizeBb() (performance float64, bestN int, bestK f
 	bestN = 20
 	bestK = 2.0
 
-	for n := 10; n < 60; n++ {
+	for n := 10; n < 20; n++ {
 		for k := 1.9; k < 2.1; k += 0.1 {
 			signalEvents := df.BackTestBb(n, k)
 			if signalEvents == nil {
@@ -303,4 +305,204 @@ func (df *DataFrameCandle) OptimizeBb() (performance float64, bestN int, bestK f
 		}
 	}
 	return performance, bestN, bestK
+}
+
+func (df *DataFrameCandle) BackTestIchimoku() *SignalEvents {
+	lenCandles := len(df.Candles)
+
+	if lenCandles <= 52 {
+		return nil
+	}
+
+	signalEvents := &SignalEvents{}
+	tenkan, kijun, senkouA, senkouB, chikou := tradingalgo.IchimokuCloud(df.Closes())
+
+	for i := 1; i < lenCandles; i++ {
+
+		if chikou[i-1] < df.Candles[i-1].High && chikou[i] >= df.Candles[i].High &&
+			senkouA[i] < df.Candles[i].Low && senkouB[i] < df.Candles[i].Low &&
+			tenkan[i] > kijun[i] {
+			signalEvents.Buy(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+
+		if chikou[i-1] > df.Candles[i-1].Low && chikou[i] <= df.Candles[i].Low &&
+			senkouA[i] > df.Candles[i].High && senkouB[i] > df.Candles[i].High &&
+			tenkan[i] < kijun[i] {
+			signalEvents.Sell(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+	}
+	return signalEvents
+}
+
+func (df *DataFrameCandle) OptimizeIchimoku() (performance float64) {
+	signalEvents := df.BackTestIchimoku()
+	if signalEvents == nil {
+		return 0.0
+	}
+	performance = signalEvents.Profit()
+	return performance
+}
+
+func (df *DataFrameCandle) BackTestMacd(macdFastPeriod, macdSlowPeriod, macdSignalPeriod int) *SignalEvents {
+	lenCandles := len(df.Candles)
+
+	if lenCandles <= macdFastPeriod || lenCandles <= macdSlowPeriod || lenCandles <= macdSignalPeriod {
+		return nil
+	}
+
+	signalEvents := &SignalEvents{}
+	outMACD, outMACDSignal, _ := talib.Macd(df.Closes(), macdFastPeriod, macdSlowPeriod, macdSignalPeriod)
+
+	for i := 1; i < lenCandles; i++ {
+		if outMACD[i] < 0 &&
+			outMACDSignal[i] < 0 &&
+			outMACD[i-1] < outMACDSignal[i-1] &&
+			outMACD[i] >= outMACDSignal[i] {
+			signalEvents.Buy(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+
+		if outMACD[i] > 0 &&
+			outMACDSignal[i] > 0 &&
+			outMACD[i-1] > outMACDSignal[i-1] &&
+			outMACD[i] <= outMACDSignal[i] {
+			signalEvents.Sell(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+	}
+	return signalEvents
+}
+
+func (df *DataFrameCandle) OptimizeMacd() (performance float64, bestMacdFastPeriod, bestMacdSlowPeriod, bestMacdSignalPeriod int) {
+	bestMacdFastPeriod = 12
+	bestMacdSlowPeriod = 26
+	bestMacdSignalPeriod = 9
+
+	for fastPeriod := 10; fastPeriod < 19; fastPeriod++ {
+		for slowPeriod := 20; slowPeriod < 30; slowPeriod++ {
+			for signalPeriod := 5; signalPeriod < 15; signalPeriod++ {
+				signalEvents := df.BackTestMacd(bestMacdFastPeriod, bestMacdSlowPeriod, bestMacdSignalPeriod)
+				if signalEvents == nil {
+					continue
+				}
+				profit := signalEvents.Profit()
+				if performance < profit {
+					performance = profit
+					bestMacdFastPeriod = fastPeriod
+					bestMacdSlowPeriod = slowPeriod
+					bestMacdSignalPeriod = signalPeriod
+				}
+			}
+		}
+	}
+	return performance, bestMacdFastPeriod, bestMacdSlowPeriod, bestMacdSignalPeriod
+}
+
+func (df *DataFrameCandle) BackTestRsi(period int, buyThread, sellThread float64) *SignalEvents {
+	lenCandles := len(df.Candles)
+	if lenCandles <= period {
+		return nil
+	}
+
+	signalEvents := NewSignalEvents()
+	values := talib.Rsi(df.Closes(), period)
+	for i := 1; i < lenCandles; i++ {
+		if values[i-1] == 0 || values[i-1] == 100 {
+			continue
+		}
+		if values[i-1] < buyThread && values[i] >= buyThread {
+			signalEvents.Buy(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+
+		if values[i-1] > sellThread && values[i] <= sellThread {
+			signalEvents.Sell(df.ProductCode, df.Candles[i].Time, df.Candles[i].Close, 1.0, false)
+		}
+	}
+	return signalEvents
+}
+
+func (df *DataFrameCandle) OptimizeRsi() (performance float64, bestPeriod int, bestBuyThread, bestSellThread float64) {
+	bestPeriod = 14
+	bestBuyThread, bestSellThread = 30.0, 70.0
+
+	for period := 5; period < 25; period++ {
+		signalEvents := df.BackTestRsi(period, bestBuyThread, bestSellThread)
+		if signalEvents == nil {
+			continue
+		}
+		profit := signalEvents.Profit()
+		if performance < profit {
+			performance = profit
+			bestPeriod = period
+			bestBuyThread = bestBuyThread
+			bestSellThread = bestSellThread
+		}
+	}
+	return performance, bestPeriod, bestBuyThread, bestSellThread
+}
+
+type TradeParams struct {
+	EmaEnable        bool
+	EmaPeriod1       int
+	EmaPeriod2       int
+	BbEnable         bool
+	BbN              int
+	BbK              float64
+	IchimokuEnable   bool
+	MacdEnable       bool
+	MacdFastPeriod   int
+	MacdSlowPeriod   int
+	MacdSignalPeriod int
+	RsiEnable        bool
+	RsiPeriod        int
+	RsiBuyThread     float64
+	RsiSellThread    float64
+}
+
+type Ranking struct {
+	Enable      bool
+	Performance float64
+}
+
+func (df *DataFrameCandle) OptimizeParams() *TradeParams {
+	emaPerformance, emaPeriod1, emaPeriod2 := df.OptimizeEma()
+	bbPerformance, bbN, bbK := df.OptimizeBb()
+	macdPerformance, macdFastPeriod, macdSlowPeriod, macdSignalPeriod := df.OptimizeMacd()
+	ichimokuPerforamcne := df.OptimizeIchimoku()
+	rsiPerformance, rsiPeriod, rsiBuyThread, rsiSellThread := df.OptimizeRsi()
+
+	emaRanking := &Ranking{false, emaPerformance}
+	bbRanking := &Ranking{false, bbPerformance}
+	macdRanking := &Ranking{false, macdPerformance}
+	ichimokuRanking := &Ranking{false, ichimokuPerforamcne}
+	rsiRanking := &Ranking{false, rsiPerformance}
+
+	rankings := []*Ranking{emaRanking, bbRanking, macdRanking, ichimokuRanking, rsiRanking}
+	sort.Slice(rankings, func(i, j int) bool { return rankings[i].Performance > rankings[j].Performance })
+
+	for i, ranking := range rankings {
+		if i >= config.Config.NumRanking {
+			break
+		}
+		if ranking.Performance > 0 {
+			ranking.Enable = true
+		}
+	}
+
+	tradeParams := &TradeParams{
+		EmaEnable:        emaRanking.Enable,
+		EmaPeriod1:       emaPeriod1,
+		EmaPeriod2:       emaPeriod2,
+		BbEnable:         bbRanking.Enable,
+		BbN:              bbN,
+		BbK:              bbK,
+		IchimokuEnable:   ichimokuRanking.Enable,
+		MacdEnable:       macdRanking.Enable,
+		MacdFastPeriod:   macdFastPeriod,
+		MacdSlowPeriod:   macdSlowPeriod,
+		MacdSignalPeriod: macdSignalPeriod,
+		RsiEnable:        rsiRanking.Enable,
+		RsiPeriod:        rsiPeriod,
+		RsiBuyThread:     rsiBuyThread,
+		RsiSellThread:    rsiSellThread,
+	}
+	return tradeParams
 }

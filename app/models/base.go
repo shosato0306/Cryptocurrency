@@ -10,7 +10,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const tableNameSignalEvents = "signal_events"
+const (
+	tableNameSignalEvents = "signal_events"
+)
 
 var DbConnection *sql.DB
 
@@ -25,32 +27,24 @@ func init() {
 		log.Fatalln(err)
 	}
 	cmd := fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			time DATETIME PRIMARY KEY NOT NULL,
-			product_code STRING,
-			side STRING,
-			price FLOAT,
-			size FLOAT
-		)`, tableNameSignalEvents)
-
-	_, err = DbConnection.Exec(cmd)
-	if err != nil {
-		log.Fatalln(err)
-	}
+        CREATE TABLE IF NOT EXISTS %s (
+            time DATETIME PRIMARY KEY NOT NULL,
+            product_code STRING,
+            side STRING,
+            price FLOAT,
+            size FLOAT)`, tableNameSignalEvents)
+	DbConnection.Exec(cmd)
 
 	for _, duration := range config.Config.Durations {
 		tableName := GetCandleTableName(config.Config.ProductCode, duration)
 		c := fmt.Sprintf(`
-			CREATE TABLE IF NOT EXISTS %s (
-				time DATETIME PRIMARY KEY NOT NULL,
-				open FLOAT,
-				close FLOAT,
-				high FLOAT,
-				low open FLOAT,
-				volume FLOAT)`, tableName)
-		_, err = DbConnection.Exec(c)
-		if err != nil {
-			log.Fatalln(err)
-		}
+            CREATE TABLE IF NOT EXISTS %s (
+            time DATETIME PRIMARY KEY NOT NULL,
+            open FLOAT,
+            close FLOAT,
+            high FLOAT,
+            low open FLOAT,
+			volume FLOAT)`, tableName)
+		DbConnection.Exec(c)
 	}
 }
