@@ -112,18 +112,24 @@ function initConfigValues() {
     config.events.values = [];
 }
 
+// candlestick chart を描画する処理
+// send() 関数の中で呼び出される
 function drawChart(dataTable) {
     var chartDiv = document.getElementById('chart_div');
     var charts = [];
     var dashboard = new google.visualization.Dashboard(chartDiv);
+    // 描画するグラフに関する設定を記述。ここではコンボチャートを作成する。
     var mainChart = new google.visualization.ChartWrapper({
         chartType: 'ComboChart',
         containerId: 'chart_div',
         options: {
+            // 横軸に関する設定
             hAxis: {
+                // trueの場合、水平軸のテキストを斜めに描画して、軸に沿ってより多くのテキストを収めるようにする
                 'slantedText': false
             },
             legend: {
+                // 凡例の位置
                 'position': 'none'
             },
             candlestick: {
@@ -141,6 +147,7 @@ function drawChart(dataTable) {
         },
         view: {
             columns: [{
+                // function を設定
                 calc: function (d, rowIndex) {
                     return d.getFormattedValue(rowIndex, 0);
                 },
@@ -151,9 +158,12 @@ function drawChart(dataTable) {
         }
 
     });
+    // chart 配列に Chartwrapper インスタンスを追加
     charts.push(mainChart);
 
+    // インスタンス mainChart の option 情報を格納
     var options = mainChart.getOptions();
+    // view = {columns: [{calc: f, type: "string"}, 1, 2, 3, 4]}
     var view = mainChart.getView();
 
     if (config.sma.enable == true) {
@@ -262,7 +272,7 @@ function drawChart(dataTable) {
                         lineWidth: 1
                     },
                     1: {
-                        color: '#e2431e'
+                        color: '#e2431e',
                     },
                     2: {
                         color: 'black',
@@ -361,6 +371,7 @@ function drawChart(dataTable) {
         charts.push(hvChart)
     }
 
+    // candlestick グラフのフィルター制御を行うインスタンスの定義
     var controlWrapper = new google.visualization.ControlWrapper({
         'controlType': 'ChartRangeFilter',
         'containerId': 'filter_div',
@@ -380,6 +391,7 @@ function drawChart(dataTable) {
 
 }
 
+// setInterval() 関数によって定期的に実行される
 function send() {
     if (config.api.enable == false) {
         return
@@ -437,7 +449,6 @@ function send() {
         params["events"] = true;
     }
 
-    console.log("in send()")
     $.get("/api/candle/", params).done(function (data) {
         initConfigValues();
         var dataTable = new google.visualization.DataTable();
@@ -525,7 +536,29 @@ function send() {
             dataTable.addColumn('number', 'Chikou');
         }
 
-        // anotation は BUY or SELL
+
+        if (data['events'] != undefined) {
+            config.dataTable.index += 1;
+            config.events.indexes[0] = config.dataTable.index;
+            config.dataTable.index += 1;
+            config.events.indexes[1] = config.dataTable.index;
+
+            config.events.values = data['events']['signals'];
+            config.events.first = config.events.values.shift();
+
+            dataTable.addColumn('number', 'Marker');
+            dataTable.addColumn({
+                type: 'string',
+                role: 'annotation'
+            });
+
+
+            if (data['events']['profit'] != undefined) {
+                profit = "$" + String(Math.round(data['events']['profit'] * 100) / 100);
+                $('#profit').html("Change:" + profit);
+            }
+        }
+
         if (data['rsi'] != undefined) {
             console.log(data);
             config.dataTable.index += 1;
@@ -584,28 +617,6 @@ function send() {
                 dataTable.addColumn('number', 'HV(' + period + ')');
                 config.hv.values[i] = hvData["values"];
                 config.hv.periods[i] = period;
-            }
-        }
-
-        if (data['events'] != undefined) {
-            config.dataTable.index += 1;
-            config.events.indexes[0] = config.dataTable.index;
-            config.dataTable.index += 1;
-            config.events.indexes[1] = config.dataTable.index;
-
-            config.events.values = data['events']['signals'];
-            config.events.first = config.events.values.shift();
-
-            dataTable.addColumn('number', 'Marker');
-            dataTable.addColumn({
-                type: 'string',
-                role: 'annotation'
-            });
-
-
-            if (data['events']['profit'] != undefined) {
-                profit = "$" + String(Math.round(data['events']['profit'] * 100) / 100);
-                $('#profit').html("Change:" + profit);
             }
         }
 
@@ -742,10 +753,12 @@ function changeDuration(s) {
     send();
 }
 
-setInterval(send, 1000 * 3)
+setInterval(send, 1000 * 10)
+// 全ての DOM ツリー構造および関連リソースが読み込まれたタイミングで実行される
 window.onload = function () {
     send()
 
+    // dashboard 部分にマウスがある場合は send関数 を実行しない(グラフの更新を行わない)
     $('#dashboard_div').mouseenter(function () {
         config.api.enable = false;
     }).mouseleave(function () {
