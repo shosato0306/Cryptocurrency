@@ -19,7 +19,7 @@ func StreamIngestionData() {
 			for _, duration := range config.Config.Durations {
 				isCreated := models.CreateCandleWithDuration(ticker, ticker.ProductCode, duration)
 				// 新規に Candle 情報が作成され、なおかつ設定したトレード期間に一致した場合は、
-				// トレードを実行する。
+				// インディケータのパラメータの最適化と売買判断を実行する。
 				if isCreated == true && duration == config.Config.TradeDuration {
 					ai.Trade()
 				}

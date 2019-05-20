@@ -123,10 +123,11 @@ function drawChart(dataTable) {
         chartType: 'ComboChart',
         containerId: 'chart_div',
         options: {
+            backgroundColor: "black",
             // 横軸に関する設定
             hAxis: {
                 // trueの場合、水平軸のテキストを斜めに描画して、軸に沿ってより多くのテキストを収めるようにする
-                'slantedText': false
+                'slantedText': true
             },
             legend: {
                 // 凡例の位置
@@ -228,6 +229,7 @@ function drawChart(dataTable) {
             'chartType': 'ColumnChart',
             'containerId': 'volume_chart',
             'options': {
+                'backgroundColor': "black",
                 'hAxis': {
                     'slantedText': false
                 },
@@ -260,6 +262,7 @@ function drawChart(dataTable) {
             'chartType': 'LineChart',
             'containerId': 'rsi_chart',
             'options': {
+                'backgroundColor': "black",
                 'hAxis': {
                     'slantedText': false
                 },
@@ -311,6 +314,7 @@ function drawChart(dataTable) {
             'chartType': 'ComboChart',
             'containerId': 'macd_chart',
             'options': {
+                backgroundColor: "black",
                 legend: {
                     'position': 'none'
                 },
@@ -359,6 +363,7 @@ function drawChart(dataTable) {
             'chartType': 'LineChart',
             'containerId': 'hv_chart',
             'options': {
+                'backgroundColor': "black",
                 'legend': {
                     'position': 'none'
                 },
@@ -376,11 +381,15 @@ function drawChart(dataTable) {
         'controlType': 'ChartRangeFilter',
         'containerId': 'filter_div',
         'options': {
+            'backgroundColor': "black",
             'filterColumnIndex': 0,
             'ui': {
                 'chartType': 'LineChart',
                 'chartView': {
                     'columns': [0, 4]
+                },
+                'chartOptions': {
+                    'backgroundColor': "black"
                 }
             }
         }
@@ -451,6 +460,9 @@ function send() {
 
     $.get("/api/candle/", params).done(function (data) {
         initConfigValues();
+        aidata = data["ai"];
+        $("#description").text(JSON.stringify(aidata.OptimizedTradeParams));
+        data = data["dfcandle"];
         var dataTable = new google.visualization.DataTable();
         dataTable.addColumn('date', 'Date');
         dataTable.addColumn('number', 'Low');

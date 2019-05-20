@@ -30,6 +30,11 @@ func viewIndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type JsResponse struct {
+	DataFrameCandle *models.DataFrameCandle `json:"dfcandle,omitempty"`
+	Ai              *AI                     `json:"ai,omitempty"`
+}
+
 type JSONError struct {
 	Error string `json:"error"`
 	Code  int    `json:"code"`
@@ -203,7 +208,13 @@ func apiCandleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	js, err := json.Marshal(df)
+	js_struct := JsResponse{
+		DataFrameCandle: df,
+		Ai:              Ai,
+	}
+
+	// js, err := json.Marshal(df)
+	js, err := json.Marshal(js_struct)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
