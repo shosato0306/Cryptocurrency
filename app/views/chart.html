@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <title>Chart</title>
     <style>
         html {
@@ -36,96 +39,116 @@
             background-image: url("https://tk.ismcdn.jp/mwimgs/6/f/1140/img_6f3c88b7a33072308a86c181faeabffd327807.jpg");
             background-size: cover;
             height: 100%;
+            color: white;
         }
 
-        .transparent {
-            background-color: rgba(255, 255, 255, 0.8);
-            height: 100%;
+        .col input {
+            width: 35px;
+        }
+
+        .nav-link {
+            color: white;
         }
     </style>
-
     <!-- ローダー自体の読み込み -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+    </script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type="text/javascript" src="/app/static/js/chart.js"></script>
 </head>
 
 <body>
-    <div class=transparent>
-        <header class="masthead mb-auto">
-            <div class="inner">
-                <h3 class="masthead-brand">Auto Trade</h3>
-                <nav class="nav nav-masthead justify-content-center">
-                    <a class="nav-link active" href="/">Home</a>
-                    <a class="nav-link" href="/chart">Chart</a>
-                    <a class="nav-link" href="#">Result</a>
-                    <a class="nav-link" href="#">Settings</a>
-                </nav>
+    <div class="container-fluid">
+        <div class="transparent">
+            <header class="masthead mb-auto">
+                <div class="inner" style="margin: 30px 0px 0px 50px;">
+                    <h3 class="masthead-brand">Auto Trade</h3>
+                    <nav class="nav nav-masthead justify-content-center">
+                        <a class="nav-link active" href="/">Home</a>
+                        <a class="nav-link" href="/chart">Chart</a>
+                        <a class="nav-link" href="#">Result</a>
+                        <a class="nav-link" href="#">Settings</a>
+                    </nav>
+                </div>
+            </header>
+            <div class="row">
+                <div class="col-md-3 col" style="padding-left: 50px;">
+                    <div>
+                        <button onclick="changeDuration('1s');">1s</button>
+                        <button onclick="changeDuration('1m');">1m</button>
+                        <button onclick="changeDuration('1h');">1h</button>
+                    </div>
+
+                    <div>
+                        SMA <input id="inputSma" type="checkbox">
+                        Period<input id="inputSmaPeriod1" type="text" value="7">
+                        <input id="inputSmaPeriod2" type="text" value="14">
+                        <input id="inputSmaPeriod3" type="text" value="50">
+                    </div>
+
+                    <div>
+                        EMA <input id="inputEma" type="checkbox">
+                        Period<input id="inputEmaPeriod1" type="text" value="7">
+                        <input id="inputEmaPeriod2" type="text" value="14">
+                        <input id="inputEmaPeriod3" type="text" value="50">
+                    </div>
+
+                    <div>
+                        BBands <input id="inputBBands" type="checkbox">
+                        N <input id="inputBBandsN" type="text" value="20">
+                        K <input id="inputBBandsK" type="text" value="2">
+                    </div>
+
+                    <div>
+                        Ichimoku <input id="inputIchimoku" type="checkbox">
+                    </div>
+
+                    <div>
+                        Volume <input id="inputVolume" type="checkbox">
+                    </div>
+
+                    <div>
+                        Rsi <input id="inputRsi" type="checkbox">
+                        Period <input id="inputRsiPeriod" type="text" value="14">
+                    </div>
+
+                    <div>
+                        MACD <input id="inputMacd" type="checkbox">
+                        Period<input id="inputMacdPeriod1" type="text" value="12">
+                        <input id="inputMacdPeriod2" type="text" value="26">
+                        <input id="inputMacdPeriod3" type="text" value="9">
+                    </div>
+
+                    <div>
+                        HV <input id="inputHv" type="checkbox">
+                        Period<input id="inputHvPeriod1" type="text" value="21">
+                        <input id="inputHvPeriod2" type="text" value="63">
+                        <input id="inputHvPeriod3" type="text" value="252">
+                    </div>
+
+                    <div>
+                        Events <input id="inputEvents" type="checkbox">
+                        <div id="profit"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div id="dashboard_div" style="margin:auto;">
+                        <div id="chart_div"></div>
+                        <div id="technical_div"></div>
+                        <div id="filter_div"></div>
+                    </div>
+                </div>
+                <div id="description" class="col-md-3" style="word-wrap: break-word; padding-right: 50px;">
+                </div>
             </div>
-        </header>
-
-        <div>
-            <button onclick="changeDuration('1s');">1s</button>
-            <button onclick="changeDuration('1m');">1m</button>
-            <button onclick="changeDuration('1h');">1h</button>
-        </div>
-
-        <div>
-            SMA <input id="inputSma" type="checkbox">
-            Period<input id="inputSmaPeriod1" type="text" value="7" style="width: 15px;">
-            <input id="inputSmaPeriod2" type="text" value="14" style="width: 15px;">
-            <input id="inputSmaPeriod3" type="text" value="50" style="width: 15px;">
-        </div>
-
-        <div>
-            EMA <input id="inputEma" type="checkbox">
-            Period<input id="inputEmaPeriod1" type="text" value="7" style="width: 15px;">
-            <input id="inputEmaPeriod2" type="text" value="14" style="width: 15px;">
-            <input id="inputEmaPeriod3" type="text" value="50" style="width: 15px;">
-        </div>
-
-        <div>
-            BBands <input id="inputBBands" type="checkbox">
-            N <input id="inputBBandsN" type="text" value="20" style="width: 15px;">
-            K <input id="inputBBandsK" type="text" value="2" style="width: 15px;">
-        </div>
-
-        <div>
-            Ichimoku <input id="inputIchimoku" type="checkbox">
-        </div>
-
-        <div>
-            Volume <input id="inputVolume" type="checkbox">
-        </div>
-
-        <div>
-            Rsi <input id="inputRsi" type="checkbox">
-            Period <input id="inputRsiPeriod" type="text" value="14" style="width: 15px;">
-        </div>
-
-        <div>
-            MACD <input id="inputMacd" type="checkbox">
-            Period<input id="inputMacdPeriod1" type="text" value="12" style="width: 15px;">
-            <input id="inputMacdPeriod2" type="text" value="26" style="width: 15px;">
-            <input id="inputMacdPeriod3" type="text" value="9" style="width: 15px;">
-        </div>
-
-        <div>
-            HV <input id="inputHv" type="checkbox">
-            Period<input id="inputHvPeriod1" type="text" value="21" style="width: 15px;">
-            <input id="inputHvPeriod2" type="text" value="63" style="width: 15px;">
-            <input id="inputHvPeriod3" type="text" value="252" style="width: 15px;">
-        </div>
-
-        <div>
-            Events <input id="inputEvents" type="checkbox">
-            <div id="profit"></div>
-        </div>
-
-        <div id="dashboard_div">
-            <div id="chart_div"></div>
-            <div id="technical_div"></div>
-            <div id="filter_div"></div>
         </div>
     </div>
 </body>
