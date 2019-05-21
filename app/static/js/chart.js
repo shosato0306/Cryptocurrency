@@ -464,7 +464,7 @@ function send() {
         $("#description").text(JSON.stringify(aidata.OptimizedTradeParams));
         data = data["dfcandle"];
         var dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('date', 'Date');
+        dataTable.addColumn('datetime', 'Date');
         dataTable.addColumn('number', 'Low');
         dataTable.addColumn('number', 'Open');
         dataTable.addColumn('number', 'Close');
@@ -756,6 +756,8 @@ function send() {
         }
 
         dataTable.addRows(googleChartData);
+        var formatter_long = new google.visualization.DateFormat({formatType: 'MM/dd\nHH:mm:ss'});
+        formatter_long.format(dataTable, 0);
         drawChart(dataTable);
     })
 }
