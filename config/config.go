@@ -25,6 +25,7 @@ type ConfigList struct {
 	DataLimit        int
 	StopLimitPercent float64
 	NumRanking       int
+	Exchange         string
 }
 
 var Config ConfigList
@@ -43,9 +44,19 @@ func init() {
 		"1d": time.Hour * 24,
 	}
 
+	var apiKey, apiSecret string
+
+	if cfg.Section("gotrading").Key("exchange").String() == "bitflyer" {
+		apiKey = cfg.Section("bitflyer").Key("api_key").String()
+		apiSecret = cfg.Section("bitflyer").Key("api_secret").String()
+	} else if cfg.Section("gotrading").Key("exchange").String() == "quoine" {
+		apiKey = cfg.Section("quoine").Key("api_key").String()
+		apiSecret = cfg.Section("quoine").Key("api_secret").String()
+	}
+
 	Config = ConfigList{
-		ApiKey:           cfg.Section("bitflyer").Key("api_key").String(),
-		ApiSecret:        cfg.Section("bitflyer").Key("api_secret").String(),
+		ApiKey:           apiKey,
+		ApiSecret:        apiSecret,
 		LogFile:          cfg.Section("gotrading").Key("log_file").String(),
 		ProductCode:      cfg.Section("gotrading").Key("product_code").String(),
 		Durations:        durations,
@@ -58,5 +69,6 @@ func init() {
 		DataLimit:        cfg.Section("gotrading").Key("data_limit").MustInt(),
 		StopLimitPercent: cfg.Section("gotrading").Key("stop_limit_percent").MustFloat64(),
 		NumRanking:       cfg.Section("gotrading").Key("num_ranking").MustInt(),
+		Exchange:         cfg.Section("gotrading").Key("exchange").String(),
 	}
 }
