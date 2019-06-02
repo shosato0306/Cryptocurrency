@@ -5,6 +5,8 @@ import (
 	"cryptocurrency/bitflyer"
 	"cryptocurrency/config"
 	"cryptocurrency/quoine"
+	"log"
+	"time"
 )
 
 func StreamIngestionData() {
@@ -43,4 +45,20 @@ func StreamIngestionData() {
 			}
 		}()
 	}
+}
+
+func CleanUpRecord() {
+	c := config.Config
+	go func() {
+		for {
+			for _, duration := range c.Durations {
+				err := models.CleanCandleRecord(c.ProductCode, duration, c.DataLimit)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			log.Println("Deletion old records is complete. Wait 30 minutes. ...")
+			time.Sleep(time.Minute * 30)
+		}
+	}()
 }

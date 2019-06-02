@@ -114,3 +114,13 @@ func GetAllCandle(productCode string, duration time.Duration, limit int) (dfCand
 	}
 	return dfCandle, nil
 }
+
+func CleanCandleRecord(productCode string, duration time.Duration, limit int) error {
+	tableName := GetCandleTableName(productCode, duration)
+	cmd := fmt.Sprintf("DELETE FROM %s WHERE time NOT IN (SELECT time FROM %s ORDER BY time DESC limit ?)", tableName, tableName)
+	_, err := DbConnection.Exec(cmd, limit)
+	if err != nil {
+		return err
+	}
+	return err
+}
