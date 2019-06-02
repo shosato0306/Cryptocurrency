@@ -10,6 +10,7 @@ import (
 func main() {
 	utils.LoggingSettings(config.Config.LogFile)
 	controllers.StreamIngestionData()
+	controllers.CleanUpRecord()
 	log.Println(controllers.StartWebServer())
 }
 
