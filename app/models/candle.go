@@ -7,9 +7,9 @@ import (
 )
 
 type Candle struct {
-	ProductCode string        `json:"product_code"`
-	Duration    time.Duration `json:"duration"`
-	Time        time.Time     `json:"time"`
+	ProductCode string        `json:"product_code" gorm:"-"`
+	Duration    time.Duration `json:"duration" gorm:"-"`
+	Time        time.Time     `json:"time" gorm:"primary_key"`
 	Open        float64       `json:"open"`
 	Close       float64       `json:"close"`
 	High        float64       `json:"high"`
@@ -30,12 +30,12 @@ func NewCandle(productCode string, duration time.Duration, timeDate time.Time, o
 	}
 }
 
-func (c *Candle) TableName() string {
+func (c *Candle) GetTableName() string {
 	return GetCandleTableName(c.ProductCode, c.Duration)
 }
 
 func (c *Candle) Create() error {
-	cmd := fmt.Sprintf("INSERT INTO %s (time, open, close, high, low, volume) VALUES (?, ?, ?, ?, ?, ?)", c.TableName())
+	cmd := fmt.Sprintf("INSERT INTO %s (time, open, close, high, low, volume) VALUES (?, ?, ?, ?, ?, ?)", c.GetTableName())
 	_, err := DbConnection.Exec(cmd, c.Time.Format(time.RFC3339), c.Open, c.Close, c.High, c.Low, c.Volume)
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func (c *Candle) Create() error {
 }
 
 func (c *Candle) Save() error {
-	cmd := fmt.Sprintf("UPDATE %s SET open = ?, close = ?, high = ?, low = ?, volume = ? WHERE time = ?", c.TableName())
+	cmd := fmt.Sprintf("UPDATE %s SET open = ?, close = ?, high = ?, low = ?, volume = ? WHERE time = ?", c.GetTableName())
 	_, err := DbConnection.Exec(cmd, c.Open, c.Close, c.High, c.Low, c.Volume, c.Time.Format(time.RFC3339))
 	if err != nil {
 		return err
