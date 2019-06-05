@@ -7,6 +7,10 @@ import (
 	"log"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -15,6 +19,7 @@ const (
 )
 
 var DbConnection *sql.DB
+var GormDbConnection *gorm.DB
 
 func GetCandleTableName(productCode string, duration time.Duration) string {
 	return fmt.Sprintf("%s_%s", productCode, duration)
@@ -47,4 +52,28 @@ func init() {
 			volume FLOAT)`, tableName)
 		DbConnection.Exec(c)
 	}
+
+	GormDbConnection, err := gorm.Open("mysql", "root:@/cryptocurrency?charset=utf8&parseTime=True&loc=Local")
+	if err != nil {
+		log.Fatal("DB connection error: ", err)
+	}
+
+	for _, duration := range config.Config.Durations {
+		tableName := GetCandleTableName(config.Config.ProductCode, duration)
+		CreatedTableName = tableName
+
+		GormDbConnection.AutoMigrate(&Candle{})
+	}
+
+	GormDbConnection.AutoMigrate(&SignalEvent{})
+	// GormDbConnection.Exec("INSERT INTO BTC_JPY_1s (time, open, close, high, low, volume) VALUES ('2019-06-03 11:33:45', 857896.5, 857896.5, 857896.5, 857896.5, 857896.5);")
+	// GormDbConnection.Exec("INSERT INTO BTC_JPY_1s (time, open, close, high, low, volume) VALUES ('2019-06-04T12:00:00Z', 857896.5, 857896.5, 857896.5, 857896.5, 857896.5);")
+
+	defer GormDbConnection.Close()
+}
+
+var CreatedTableName string
+
+func (c *Candle) TableName() string {
+	return CreatedTableName
 }

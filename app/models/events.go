@@ -11,7 +11,7 @@ import (
 )
 
 type SignalEvent struct {
-	Time        time.Time `json:"time"`
+	Time        time.Time `json:"time" gorm:"primary_key"`
 	ProductCode string    `json:"product_code"`
 	Side        string    `json:"side"`
 	Price       float64   `json:"price"`
