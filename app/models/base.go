@@ -20,6 +20,7 @@ const (
 
 var DbConnection *sql.DB
 var GormDbConnection *gorm.DB
+var DB *sql.DB
 
 func GetCandleTableName(productCode string, duration time.Duration) string {
 	return fmt.Sprintf("%s_%s", productCode, duration)
@@ -53,7 +54,7 @@ func init() {
 		DbConnection.Exec(c)
 	}
 
-	GormDbConnection, err := gorm.Open("mysql", "root:@/cryptocurrency?charset=utf8&parseTime=True&loc=Local")
+	GormDbConnection, err = gorm.Open("mysql", "root:@/cryptocurrency?charset=utf8&parseTime=True&loc=Local")
 	if err != nil {
 		log.Fatal("DB connection error: ", err)
 	}
@@ -66,10 +67,8 @@ func init() {
 	}
 
 	GormDbConnection.AutoMigrate(&SignalEvent{})
-	// GormDbConnection.Exec("INSERT INTO BTC_JPY_1s (time, open, close, high, low, volume) VALUES ('2019-06-03 11:33:45', 857896.5, 857896.5, 857896.5, 857896.5, 857896.5);")
-	// GormDbConnection.Exec("INSERT INTO BTC_JPY_1s (time, open, close, high, low, volume) VALUES ('2019-06-04T12:00:00Z', 857896.5, 857896.5, 857896.5, 857896.5, 857896.5);")
 
-	defer GormDbConnection.Close()
+	DB, err = sql.Open("mysql", "root:@/cryptocurrency?charset=utf8&parseTime=True&loc=Local")
 }
 
 var CreatedTableName string

@@ -3,6 +3,7 @@ package models
 import (
 	"cryptocurrency/bitflyer"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -40,6 +41,15 @@ func (c *Candle) Create() error {
 	if err != nil {
 		return err
 	}
+
+	// for MySQL
+	cmd = fmt.Sprintf("INSERT INTO %s (time, open, close, high, low, volume) VALUES (?, ?, ?, ?, ?, ?);", c.GetTableName())
+	_, err = DB.Exec(cmd, c.Time, c.Open, c.Close, c.High, c.Low, c.Volume)
+	if err != nil {
+		log.Println("Create candle record failed: ", err)
+		return err
+	}
+
 	return err
 }
 
@@ -49,6 +59,15 @@ func (c *Candle) Save() error {
 	if err != nil {
 		return err
 	}
+
+	// for MySQL
+	cmd = fmt.Sprintf("UPDATE %s SET open = ?, close = ?, high = ?, low = ?, volume = ? WHERE time = ?;", c.GetTableName())
+	_, err = DB.Exec(cmd, c.Open, c.Close, c.High, c.Low, c.Volume, c.Time)
+	if err != nil {
+		log.Println("Update candel record failed: ", err)
+		return err
+	}
+
 	return err
 }
 
@@ -61,6 +80,17 @@ func GetCandle(productCode string, duration time.Duration, dateTime time.Time) *
 	if err != nil {
 		return nil
 	}
+
+	// for MySQL
+	cmd = fmt.Sprintf("SELECT time, open, close, high, low, volume FROM  %s WHERE time = ?;", tableName)
+	testRow := DB.QueryRow(cmd, dateTime)
+	var testCandle Candle
+	err = testRow.Scan(&testCandle.Time, &testCandle.Open, &testCandle.Close, &testCandle.High, &testCandle.Low, &testCandle.Volume)
+	if err != nil {
+		log.Println("Get candle record failed: ", err)
+		return nil
+	}
+
 	return NewCandle(productCode, duration, candle.Time, candle.Open, candle.Close, candle.High, candle.Low, candle.Volume)
 }
 
@@ -71,7 +101,10 @@ func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, durati
 	if currentCandle == nil {
 		candle := NewCandle(productCode, duration, ticker.TruncateDateTime(duration),
 			price, price, price, price, ticker.Volume)
-		candle.Create()
+		err := candle.Create()
+		if err != nil {
+			log.Println("Record Insert Error: ", err)
+		}
 		return true
 	}
 
@@ -112,6 +145,16 @@ func GetAllCandle(productCode string, duration time.Duration, limit int) (dfCand
 	if err != nil {
 		return
 	}
+
+	// For MySQL
+	cmd = fmt.Sprintf(`SELECT * FROM %s  WHERE time IN (
+		SELECT tmp.time FROM (SELECT time FROM %s ORDER BY time DESC LIMIT ?
+		) AS tmp) ORDER BY time ASC;`, tableName, tableName)
+	rows, err = DB.Query(cmd, limit)
+	if err != nil {
+		return
+	}
+
 	return dfCandle, nil
 }
 
@@ -122,5 +165,14 @@ func CleanCandleRecord(productCode string, duration time.Duration, limit int) er
 	if err != nil {
 		return err
 	}
+
+	// for MySQL
+	cmd = fmt.Sprintf("DELETE FROM %s WHERE time NOT IN (SELECT tmp.time FROM (SELECT time FROM %s ORDER BY time DESC limit ?) AS tmp);", tableName, tableName)
+	_, err = DB.Exec(cmd, limit)
+	if err != nil {
+		log.Println("Delete records failed: ", err)
+		return err
+	}
+
 	return err
 }

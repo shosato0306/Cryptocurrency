@@ -28,6 +28,19 @@ func (s *SignalEvent) Save() bool {
 		}
 		return false
 	}
+
+	// for MySQL
+	cmd = fmt.Sprintf("INSERT INTO %s (time, product_code, side, price, size) VALUES (?, ?, ?, ?, ?);", tableNameSignalEvents)
+	_, err = DB.Exec(cmd, s.Time, s.ProductCode, s.Side, s.Price, s.Size)
+	if err != nil {
+		// MySQL の場合の挙動を確認する必要あり
+		if strings.Contains(err.Error(), "Duplicate entry") {
+			log.Println(err)
+			return true
+		}
+		return false
+	}
+
 	return true
 }
 
@@ -62,6 +75,29 @@ func GetSignalEventsByCount(loadEvents int) *SignalEvents {
 	if err != nil {
 		return nil
 	}
+
+	// for MySQL
+	cmd = fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+        SELECT tmp.time FROM (SELECT time FROM %s WHERE product_code = ? ORDER BY time DESC LIMIT ? ) AS tmp)
+		ORDER BY time ASC;`, tableNameSignalEvents, tableNameSignalEvents)
+
+	rows, err = DB.Query(cmd, config.Config.ProductCode, loadEvents)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	var testSignalEvents SignalEvents
+	for rows.Next() {
+		var testSignalEvent SignalEvent
+		rows.Scan(&testSignalEvent.Time, &testSignalEvent.ProductCode, &testSignalEvent.Side, &testSignalEvent.Price, &testSignalEvent.Size)
+		testSignalEvents.Signals = append(testSignalEvents.Signals, testSignalEvent)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil
+	}
+
 	return &signalEvents
 }
 
@@ -83,6 +119,28 @@ func GetSignalEventsAfterTime(timeTime time.Time) *SignalEvents {
 		rows.Scan(&signalEvent.Time, &signalEvent.ProductCode, &signalEvent.Side, &signalEvent.Price, &signalEvent.Size)
 		signalEvents.Signals = append(signalEvents.Signals, signalEvent)
 	}
+
+	// for MySQL
+	cmd = fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+			SELECT time FROM %s
+			WHERE time >= ?
+			ORDER BY time DESC
+		) ORDER BY time ASC;`, tableNameSignalEvents, tableNameSignalEvents)
+
+	rows, err = DB.Query(cmd, timeTime.Format(time.RFC3339))
+	if err != nil {
+		fmt.Println("GetSignalEventsAfterTime failed: ", err)
+		return nil
+	}
+	defer rows.Close()
+
+	var testSignalEvents SignalEvents
+	for rows.Next() {
+		var testSignalEvent SignalEvent
+		rows.Scan(&testSignalEvent.Time, &testSignalEvent.ProductCode, &testSignalEvent.Side, &testSignalEvent.Price, &testSignalEvent.Size)
+		testSignalEvents.Signals = append(testSignalEvents.Signals, testSignalEvent)
+	}
+
 	return &signalEvents
 }
 
