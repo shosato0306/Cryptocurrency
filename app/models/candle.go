@@ -3,6 +3,8 @@ package models
 import (
 	"cryptocurrency/bitflyer"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 )
 
@@ -35,18 +37,20 @@ func (c *Candle) GetTableName() string {
 }
 
 func (c *Candle) Create() error {
-	cmd := fmt.Sprintf("INSERT INTO %s (time, open, close, high, low, volume) VALUES (?, ?, ?, ?, ?, ?)", c.GetTableName())
-	_, err := DbConnection.Exec(cmd, c.Time.Format(time.RFC3339), c.Open, c.Close, c.High, c.Low, c.Volume)
+	cmd := fmt.Sprintf("INSERT INTO %s (time, open, close, high, low, volume) VALUES (?, ?, ?, ?, ?, ?);", c.GetTableName())
+	_, err := DB.Exec(cmd, c.Time, c.Open, c.Close, c.High, c.Low, c.Volume)
 	if err != nil {
+		log.Println("Create candle record failed: ", err)
 		return err
 	}
 	return err
 }
 
 func (c *Candle) Save() error {
-	cmd := fmt.Sprintf("UPDATE %s SET open = ?, close = ?, high = ?, low = ?, volume = ? WHERE time = ?", c.GetTableName())
-	_, err := DbConnection.Exec(cmd, c.Open, c.Close, c.High, c.Low, c.Volume, c.Time.Format(time.RFC3339))
+	cmd := fmt.Sprintf("UPDATE %s SET open = ?, close = ?, high = ?, low = ?, volume = ? WHERE time = ?;", c.GetTableName())
+	_, err := DB.Exec(cmd, c.Open, c.Close, c.High, c.Low, c.Volume, c.Time)
 	if err != nil {
+		log.Println("Update candel record failed: ", err)
 		return err
 	}
 	return err
@@ -54,11 +58,16 @@ func (c *Candle) Save() error {
 
 func GetCandle(productCode string, duration time.Duration, dateTime time.Time) *Candle {
 	tableName := GetCandleTableName(productCode, duration)
-	cmd := fmt.Sprintf("SELECT time, open, close, high, low, volume FROM  %s WHERE time = ?", tableName)
-	row := DbConnection.QueryRow(cmd, dateTime.Format(time.RFC3339))
+	cmd := fmt.Sprintf("SELECT time, open, close, high, low, volume FROM  %s WHERE time = ?;", tableName)
+	row := DB.QueryRow(cmd, dateTime)
 	var candle Candle
 	err := row.Scan(&candle.Time, &candle.Open, &candle.Close, &candle.High, &candle.Low, &candle.Volume)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			// 指定された duration で既存の candle 情報が未作成の場合
+			return nil
+		}
+		log.Println("Get candle record failed: ", err)
 		return nil
 	}
 	return NewCandle(productCode, duration, candle.Time, candle.Open, candle.Close, candle.High, candle.Low, candle.Volume)
@@ -71,7 +80,10 @@ func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, durati
 	if currentCandle == nil {
 		candle := NewCandle(productCode, duration, ticker.TruncateDateTime(duration),
 			price, price, price, price, ticker.Volume)
-		candle.Create()
+		err := candle.Create()
+		if err != nil {
+			log.Println("Record Insert Error: ", err)
+		}
 		return true
 	}
 
@@ -89,11 +101,13 @@ func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, durati
 
 func GetAllCandle(productCode string, duration time.Duration, limit int) (dfCandle *DataFrameCandle, err error) {
 	tableName := GetCandleTableName(productCode, duration)
-	cmd := fmt.Sprintf(`SELECT * FROM (
-		SELECT time, open, close, high, low, volume FROM %s ORDER BY time DESC LIMIT ?
-		) ORDER BY time ASC;`, tableName)
-	rows, err := DbConnection.Query(cmd, limit)
+	cmd := fmt.Sprintf(`SELECT * FROM %s  WHERE time IN (
+		SELECT tmp.time FROM (SELECT time FROM %s ORDER BY time DESC LIMIT ?
+		) AS tmp) ORDER BY time ASC;`, tableName, tableName)
+	rows, err := DB.Query(cmd, limit)
+
 	if err != nil {
+		fmt.Println("GetAllCandle failed: ", err)
 		return
 	}
 	defer rows.Close()
@@ -110,6 +124,7 @@ func GetAllCandle(productCode string, duration time.Duration, limit int) (dfCand
 	}
 	err = rows.Err()
 	if err != nil {
+		fmt.Println("GetAllCandle failed: ", err)
 		return
 	}
 	return dfCandle, nil
@@ -117,9 +132,10 @@ func GetAllCandle(productCode string, duration time.Duration, limit int) (dfCand
 
 func CleanCandleRecord(productCode string, duration time.Duration, limit int) error {
 	tableName := GetCandleTableName(productCode, duration)
-	cmd := fmt.Sprintf("DELETE FROM %s WHERE time NOT IN (SELECT time FROM %s ORDER BY time DESC limit ?)", tableName, tableName)
-	_, err := DbConnection.Exec(cmd, limit)
+	cmd := fmt.Sprintf("DELETE FROM %s WHERE time NOT IN (SELECT tmp.time FROM (SELECT time FROM %s ORDER BY time DESC limit ?) AS tmp);", tableName, tableName)
+	_, err := DB.Exec(cmd, limit)
 	if err != nil {
+		log.Println("Delete records failed: ", err)
 		return err
 	}
 	return err

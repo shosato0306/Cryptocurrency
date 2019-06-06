@@ -19,15 +19,16 @@ type SignalEvent struct {
 }
 
 func (s *SignalEvent) Save() bool {
-	cmd := fmt.Sprintf("INSERT INTO %s (time, product_code, side, price, size) VALUES (?, ?, ?, ?, ?)", tableNameSignalEvents)
-	_, err := DbConnection.Exec(cmd, s.Time.Format(time.RFC3339), s.ProductCode, s.Side, s.Price, s.Size)
+	cmd := fmt.Sprintf("INSERT INTO %s (time, product_code, side, price, size) VALUES (?, ?, ?, ?, ?);", tableNameSignalEvents)
+	_, err := DB.Exec(cmd, s.Time, s.ProductCode, s.Side, s.Price, s.Size)
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			log.Println(err)
+		if strings.Contains(err.Error(), "Duplicate entry") {
+			log.Println("Insert record error: ", err)
 			return true
 		}
 		return false
 	}
+
 	return true
 }
 
@@ -43,11 +44,13 @@ func NewSignalEvents() *SignalEvents {
 // 実際に取引を行っている場合(Backtest == False)の場合の処理
 // DB から指定した個数分だけ最新の signalevent 情報を取得する
 func GetSignalEventsByCount(loadEvents int) *SignalEvents {
-	cmd := fmt.Sprintf(`SELECT * FROM (
-        SELECT time, product_code, side, price, size FROM %s WHERE product_code = ? ORDER BY time DESC LIMIT ? )
-        ORDER BY time ASC;`, tableNameSignalEvents)
-	rows, err := DbConnection.Query(cmd, config.Config.ProductCode, loadEvents)
+	cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+        SELECT tmp.time FROM (SELECT time FROM %s WHERE product_code = ? ORDER BY time DESC LIMIT ? ) AS tmp)
+		ORDER BY time ASC;`, tableNameSignalEvents, tableNameSignalEvents)
+
+	rows, err := DB.Query(cmd, config.Config.ProductCode, loadEvents)
 	if err != nil {
+		log.Println("Get signalevent error: ", err)
 		return nil
 	}
 	defer rows.Close()
@@ -60,19 +63,22 @@ func GetSignalEventsByCount(loadEvents int) *SignalEvents {
 	}
 	err = rows.Err()
 	if err != nil {
+		log.Println(err)
 		return nil
 	}
 	return &signalEvents
 }
 
 func GetSignalEventsAfterTime(timeTime time.Time) *SignalEvents {
-	cmd := fmt.Sprintf(`SELECT * FROM (
-                SELECT time, product_code, side, price, size FROM %s
-                WHERE DATETIME(time) >= DATETIME(?)
-                ORDER BY time DESC
-            ) ORDER BY time ASC;`, tableNameSignalEvents)
-	rows, err := DbConnection.Query(cmd, timeTime.Format(time.RFC3339))
+	cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+			SELECT time FROM %s
+			WHERE time >= ?
+			ORDER BY time DESC
+		) ORDER BY time ASC;`, tableNameSignalEvents, tableNameSignalEvents)
+
+	rows, err := DB.Query(cmd, timeTime.Format(time.RFC3339))
 	if err != nil {
+		fmt.Println("GetSignalEventsAfterTime failed: ", err)
 		return nil
 	}
 	defer rows.Close()
