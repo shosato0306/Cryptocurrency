@@ -16,3 +16,4 @@ config.ini
 stockdata.sql
 /tmp
 debug
+/old
