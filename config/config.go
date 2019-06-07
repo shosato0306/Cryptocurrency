@@ -67,6 +67,7 @@ func init() {
 	if os.Getenv("DATABASE_URL") == "" {
 		dbName = cfg.Section("db").Key("name").String()
 	} else {
+		// Heroku で作成される MySQL のエンドポイントを指定する。
 		dbName = ""
 	}
 
