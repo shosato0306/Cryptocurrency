@@ -34,7 +34,7 @@ var Config ConfigList
 func Env_load() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("There is no .env file. This application is running on Heroku.")
 	}
 }
 
