@@ -17,3 +17,4 @@ stockdata.sql
 /tmp
 debug
 /old
+.env

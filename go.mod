@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/websocket v0.0.0-20190427040306-80c2d40e9b91
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jinzhu/inflection v0.0.0-20190603042836-f5c5f50e6090
+	github.com/joho/godotenv v1.3.0
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/toorop/go-pusher v0.0.0-20180521062818-4521e2eb39fb
