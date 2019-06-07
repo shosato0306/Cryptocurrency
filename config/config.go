@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"gopkg.in/ini.v1"
@@ -54,6 +55,23 @@ func init() {
 		apiSecret = cfg.Section("quoine").Key("api_secret").String()
 	}
 
+	port_str := os.Getenv("PORT")
+	var port int
+	if port_str == "" {
+		port = cfg.Section("web").Key("port").MustInt()
+	} else {
+		port, _ = strconv.Atoi(port_str)
+	}
+
+	var dbName string
+	if os.Getenv("DATABASE_URL") == "" {
+		dbName = cfg.Section("db").Key("name").String()
+	} else {
+		// TODO
+		// Heroku で作成される MySQL のエンドポイントを指定する。
+		dbName = ""
+	}
+
 	Config = ConfigList{
 		ApiKey:           apiKey,
 		ApiSecret:        apiSecret,
@@ -61,9 +79,9 @@ func init() {
 		ProductCode:      cfg.Section("gotrading").Key("product_code").String(),
 		Durations:        durations,
 		TradeDuration:    durations[cfg.Section("gotrading").Key("trade_duration").String()],
-		DbName:           cfg.Section("db").Key("name").String(),
+		DbName:           dbName,
 		SQLDriver:        cfg.Section("db").Key("driver").String(),
-		Port:             cfg.Section("web").Key("port").MustInt(),
+		Port:             port,
 		BackTest:         cfg.Section("gotrading").Key("back_test").MustBool(),
 		UsePercent:       cfg.Section("gotrading").Key("use_percent").MustFloat64(),
 		DataLimit:        cfg.Section("gotrading").Key("data_limit").MustInt(),
