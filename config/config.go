@@ -44,8 +44,16 @@ func init() {
 	durations := map[string]time.Duration{
 		"1s": time.Second,
 		"1m": time.Minute,
+		"30m": time.Minute * 30,
 		"1h": time.Hour,
+		"3h": time.Hour * 3,
+		"6h": time.Hour * 6,
+		"12h": time.Hour * 12,
 		"1d": time.Hour * 24,
+		"2d": time.Hour * 48,
+		"3d": time.Hour * 72,
+		"1w": time.Hour * 168,
+		"1month": time.Hour * 720,
 	}
 
 	var apiKey, apiSecret string
