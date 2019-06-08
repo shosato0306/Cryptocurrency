@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"cryptocurrency/config"
+	"cryptocurrency/slack"
 )
 
 var chart_templates = template.Must(template.ParseFiles("app/views/chart.html"))
@@ -45,6 +46,7 @@ func APIError(w http.ResponseWriter, errMessage string, code int) {
 	w.WriteHeader(code)
 	jsonError, err := json.Marshal(JSONError{Error: errMessage, Code: code})
 	if err != nil {
+		slack.Notice("notification", "APIError: " + err.Error())
 		log.Fatal(err)
 	}
 	w.Write(jsonError)

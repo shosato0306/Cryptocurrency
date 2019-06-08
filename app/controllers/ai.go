@@ -14,6 +14,7 @@ import (
 	"cryptocurrency/bitflyer"
 	"cryptocurrency/config"
 	"cryptocurrency/tradingalgo"
+	"cryptocurrency/slack"
 )
 
 const (
@@ -115,11 +116,13 @@ func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderC
 	log.Printf("status=buy candle=%+v order=%+v", candle, order)
 	resp, err := ai.API.SendOrder(order)
 	if err != nil {
-		log.Println(err)
+		slack.Notice("notification", "Send order failed: " + err.Error())
+		log.Println("Send order failed: ", err)
 		return
 	}
 	if resp.ChildOrderAcceptanceID == "" {
 		// Insufficient fund
+		slack.Notice("notification", "Insufficient fund")
 		log.Printf("order=%+v status=no_id", order)
 		return
 	}
@@ -156,11 +159,13 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 	log.Printf("status=sell candle=%+v order=%+v", candle, order)
 	resp, err := ai.API.SendOrder(order)
 	if err != nil {
-		log.Println(err)
+		slack.Notice("notification", "Send order failed: " + err.Error())
+		log.Println("Send order failed: ", err)
 		return
 	}
 	if resp.ChildOrderAcceptanceID == "" {
 		// Insufficient fund
+		slack.Notice("notification", "Insufficient fund")
 		log.Printf("order=%+v status=no_id", order)
 		return
 	}
@@ -173,6 +178,7 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 func (ai *AI) Trade() {
 	isAcquire := ai.TradeSemaphore.TryAcquire(1)
 	if !isAcquire {
+		slack.Notice("notification", "Could not get trade lock")
 		log.Println("Could not get trade lock")
 		return
 	}
@@ -333,6 +339,7 @@ func (ai *AI) WaitUntilOrderComplete(childOrderAcceptanceID string, executeTime 
 					if order.Side == "BUY" {
 						couldBuy := ai.SignalEvents.Buy(ai.ProductCode, executeTime, order.AveragePrice, order.Size, true)
 						if !couldBuy {
+							slack.Notice("trade", "BUY process completed !")
 							log.Printf("status=buy childOrderAcceptanceID=%s order=%+v", childOrderAcceptanceID, order)
 						}
 						return couldBuy
@@ -340,6 +347,7 @@ func (ai *AI) WaitUntilOrderComplete(childOrderAcceptanceID string, executeTime 
 					if order.Side == "SELL" {
 						couldSell := ai.SignalEvents.Sell(ai.ProductCode, executeTime, order.AveragePrice, order.Size, true)
 						if !couldSell {
+							slack.Notice("trade", "SELL process completed !")
 							log.Printf("status=sell childOrderAcceptanceID=%s order=%+v", childOrderAcceptanceID, order)
 						}
 						return couldSell

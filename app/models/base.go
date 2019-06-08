@@ -2,6 +2,7 @@ package models
 
 import (
 	"cryptocurrency/config"
+	"cryptocurrency/slack"
 	"database/sql"
 	"fmt"
 	"log"
@@ -28,6 +29,7 @@ func init() {
 	var err error
 	DB, err = sql.Open(config.Config.SQLDriver, config.Config.DbName)
 	if err != nil {
+		slack.Notice("notification", "DB connection error: " + err.Error())
 		log.Fatal("DB connection error: ", err)
 	}
 

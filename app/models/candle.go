@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 	"time"
+	"cryptocurrency/slack"
 )
 
 type Candle struct {
@@ -107,6 +108,7 @@ func GetAllCandle(productCode string, duration time.Duration, limit int) (dfCand
 	rows, err := DB.Query(cmd, limit)
 
 	if err != nil {
+		slack.Notice("notification", "DB connection error: " + err.Error())
 		fmt.Println("GetAllCandle failed: ", err)
 		return
 	}

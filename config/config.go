@@ -27,6 +27,8 @@ type ConfigList struct {
 	StopLimitPercent float64
 	NumRanking       int
 	Exchange         string
+
+	SlackWebhookURL string
 }
 
 var Config ConfigList
@@ -89,6 +91,7 @@ func init() {
 		StopLimitPercent: stopLimitPercent,
 		NumRanking:       numRanking,
 		Exchange:         os.Getenv("EXCHANGE"),
+		SlackWebhookURL:  os.Getenv("SLACK_WEBHOOK_URL"),
 	}
 
 	// Existing Code

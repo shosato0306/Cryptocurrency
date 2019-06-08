@@ -2,6 +2,7 @@ package quoine
 
 import (
 	"bytes"
+	"cryptocurrency/slack"
 	"cryptocurrency/bitflyer"
 	"encoding/json"
 	"io/ioutil"
@@ -81,6 +82,7 @@ INIT:
 
 	pusherClient, err := pusher.NewClient(APP_KEY)
 	if err != nil {
+		slack.Notice("notification", "NewClient failed: " + err.Error())
 		log.Println(err)
 		log.Println("wait...")
 		time.Sleep(time.Second * 5)
@@ -90,22 +92,27 @@ INIT:
 	// Subscribe
 	err = pusherClient.Subscribe("product_cash_btcjpy_5")
 	if err != nil {
+		slack.Notice("notification", "Subscribe failed: " + err.Error())
 		log.Println("Subscription error : ", err)
 	}
 
 	updatedChannel, err := pusherClient.Bind("updated")
 	if err != nil {
+		slack.Notice("notification", "Bind failed: " + err.Error())
 		log.Println("Bind error: ", err)
 	}
 	log.Println("Binded to 'update' event")
 
 	errChannel, err := pusherClient.Bind(pusher.ErrEvent)
 	if err != nil {
+		slack.Notice("notification", "Bind failed: " + err.Error())
 		log.Println("Bind error: ", err)
 	}
 	log.Println("Binded to 'ErrEvent' event")
 
 	log.Println("init done")
+
+	slack.Notice("notification", "Initialization of connection to quine is complete")
 
 	for {
 		select {
@@ -114,6 +121,7 @@ INIT:
 			var product Product
 			err = json.Unmarshal(bytes, &product)
 			if err != nil {
+				slack.Notice("notification", "Unmarshal failed: " + err.Error())
 				log.Fatal(err)
 			}
 
