@@ -18,3 +18,4 @@ stockdata.sql
 debug
 /old
 .env
+.vscode
