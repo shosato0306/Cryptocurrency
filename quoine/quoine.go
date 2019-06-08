@@ -82,7 +82,7 @@ INIT:
 
 	pusherClient, err := pusher.NewClient(APP_KEY)
 	if err != nil {
-		slack.Notice("notification", "NewClient failed: " + err.Error())
+		slack.Notice("notification", "Create NewClient failed: " + err.Error())
 		log.Println(err)
 		log.Println("wait...")
 		time.Sleep(time.Second * 5)

@@ -8,7 +8,7 @@ import (
 )
 
 func Notice(channel, text string){
-    jsonStr := `{"channel":"` + channel + `","username":"Crypto-bot","text":"` + text + `","icon_emoji":":ドル記号_太字:"}`
+    jsonStr := `{"channel":"` + channel + `","username":"Crypto-bot","text":"` + text + `","icon_emoji":":ghost:"}`
 
     req, err := http.NewRequest(
         "POST",
