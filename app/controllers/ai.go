@@ -76,7 +76,7 @@ func (ai *AI) UpdateOptimizeParams(isContinue bool) {
 	log.Printf("optimized_trade_params=%+v", ai.OptimizedTradeParams)
 	if ai.OptimizedTradeParams == nil && isContinue && !ai.BackTest {
 		log.Print("status_no_params")
-		time.Sleep(10 * ai.Duration)
+		time.Sleep(5 * ai.Duration)
 		ai.UpdateOptimizeParams(isContinue)
 	}
 }
