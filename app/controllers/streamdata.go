@@ -5,6 +5,7 @@ import (
 	"cryptocurrency/bitflyer"
 	"cryptocurrency/config"
 	"cryptocurrency/quoine"
+	"cryptocurrency/slack"
 	"log"
 	"time"
 )
@@ -54,6 +55,7 @@ func CleanUpRecord() {
 			for _, duration := range c.Durations {
 				err := models.CleanCandleRecord(c.ProductCode, duration, c.DataLimit)
 				if err != nil {
+					slack.Notice("notification", "CleanUpRecord failed: " + err.Error())
 					log.Fatal(err)
 				}
 			}
