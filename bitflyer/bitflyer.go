@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	
+	"cryptocurrency/app/models"
 )
 
 const baseURL = "https://api.bitflyer.com/v1/"
@@ -81,13 +83,7 @@ func (api *APIClient) doRequest(method, urlPath string, query map[string]string,
 	return body, nil
 }
 
-type Balance struct {
-	CurrentCode string  `json:"currency_code"`
-	Amount      float64 `json:"amount"`
-	Available   float64 `json:"available"`
-}
-
-func (api *APIClient) GetBalance() ([]Balance, error) {
+func (api *APIClient) GetBalance() ([]models.Balance, error) {
 	url := "me/getbalance"
 	resp, err := api.doRequest("GET", url, map[string]string{}, nil)
 	log.Printf("url=%s resp=%s", url, string(resp))
@@ -95,7 +91,7 @@ func (api *APIClient) GetBalance() ([]Balance, error) {
 		log.Printf("action=GetBalance err=%s", err.Error())
 		return nil, err
 	}
-	var balance []Balance
+	var balance []models.Balance
 	err = json.Unmarshal(resp, &balance)
 	if err != nil {
 		log.Printf("action=GetBalance err=%s", err.Error())
@@ -104,65 +100,13 @@ func (api *APIClient) GetBalance() ([]Balance, error) {
 	return balance, nil
 }
 
-type Ticker struct {
-	ProductCode string `json:"product_code"`
-	Timestamp   string `json:"timestamp"`
-	TickID      int    `json:"tick_id"`
-	// Bid は買値
-	BestBid float64 `json:"best_bid"`
-	// Ask は売値
-	BestAsk         float64 `json:"best_ask"`
-	BestBidSize     float64 `json:"best_bid_size"`
-	BestAskSize     float64 `json:"best_ask_size"`
-	TotalBidDepth   float64 `json:"total_bid_depth"`
-	TotalAskDepth   float64 `json:"total_ask_depth"`
-	Ltp             float64 `json:"ltp"`
-	Volume          float64 `json:"volume"`
-	VolumeByProduct float64 `json:"volume_by_product"`
-}
-
-func NewTicker(productCode, timeStamp string, bestBid, bestAsk, volume float64) *Ticker {
-	Ticker := &Ticker{
-		ProductCode:     productCode,
-		Timestamp:       timeStamp,
-		TickID:          0,
-		BestBid:         bestBid,
-		BestAsk:         bestAsk,
-		BestBidSize:     0,
-		BestAskSize:     0,
-		TotalBidDepth:   0,
-		TotalAskDepth:   0,
-		Ltp:             0,
-		Volume:          volume,
-		VolumeByProduct: 0,
-	}
-	return Ticker
-}
-
-// 売値と買値の中間の値を取得
-func (t *Ticker) GetMidPrice() float64 {
-	return (t.BestBid + t.BestAsk) / 2
-}
-
-func (t *Ticker) DateTime() time.Time {
-	dateTime, err := time.Parse(time.RFC3339, t.Timestamp)
-	if err != nil {
-		log.Printf("action=DateTime, err=%s", err.Error())
-	}
-	return dateTime
-}
-
-func (t *Ticker) TruncateDateTime(duration time.Duration) time.Time {
-	return t.DateTime().Truncate(duration)
-}
-
-func (api *APIClient) GetTicker(productCode string) (*Ticker, error) {
+func (api *APIClient) GetTicker(productCode string) (*models.Ticker, error) {
 	url := "ticker"
 	resp, err := api.doRequest("GET", url, map[string]string{"product_code": productCode}, nil)
 	if err != nil {
 		return nil, err
 	}
-	var ticker Ticker
+	var ticker models.Ticker
 	err = json.Unmarshal(resp, &ticker)
 	if err != nil {
 		return nil, err
@@ -182,7 +126,7 @@ type SubscribeParams struct {
 	Channel string `json:"channel"`
 }
 
-func (api *APIClient) GetRealTimeTicker(symbol string, ch chan<- Ticker) {
+func (api *APIClient) GetRealTimeTicker(symbol string, ch chan<- models.Ticker) {
 	u := url.URL{Scheme: "wss", Host: "ws.lightstream.bitflyer.com", Path: "/json-rpc"}
 	log.Printf("connecting to %s", u.String())
 
@@ -215,7 +159,7 @@ OUTER:
 						if err != nil {
 							continue OUTER
 						}
-						var ticker Ticker
+						var ticker models.Ticker
 						if err := json.Unmarshal(marshaTic, &ticker); err != nil {
 							continue OUTER
 						}
@@ -227,59 +171,34 @@ OUTER:
 	}
 }
 
-type Order struct {
-	ID                     int     `json:"id"`
-	ChildOrderAcceptanceID string  `json:"child_order_acceptance_id"`
-	ProductCode            string  `json:"product_code"`
-	ChildOrderType         string  `json:"child_order_type"`
-	Side                   string  `json:"side"`
-	Price                  float64 `json:"price"`
-	Size                   float64 `json:"size"`
-	MinuteToExpires        int     `json:"minute_to_expire"`
-	TimeInForce            string  `json:"time_in_force"`
-	Status                 string  `json:"status"`
-	ErrorMessage           string  `json:"error_message"`
-	AveragePrice           float64 `json:"average_price"`
-	ChildOrderState        string  `json:"child_order_state"`
-	ExpireDate             string  `json:"expire_date"`
-	ChildOrderDate         string  `json:"child_order_date"`
-	OutstandingSize        float64 `json:"outstanding_size"`
-	CancelSize             float64 `json:"cancel_size"`
-	ExecutedSize           float64 `json:"executed_size"`
-	TotalCommission        float64 `json:"total_commission"`
-	Count                  int     `json:"count"`
-	Before                 int     `json:"before"`
-	After                  int     `json:"after"`
-}
-
 type ResponseSendChildOrder struct {
 	ChildOrderAcceptanceID string `json:"child_order_acceptance_id"`
 }
 
-func (api *APIClient) SendOrder(order *Order) (*ResponseSendChildOrder, error) {
+func (api *APIClient) SendOrder(order *models.Order) (string, error) {
 	data, err := json.Marshal(order)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	url := "me/sendchildorder"
 	resp, err := api.doRequest("POST", url, map[string]string{}, data)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	var response ResponseSendChildOrder
 	err = json.Unmarshal(resp, &response)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return &response, nil
+	return response.ChildOrderAcceptanceID, nil
 }
 
-func (api *APIClient) ListOrder(query map[string]string) ([]Order, error) {
+func (api *APIClient) ListOrder(query map[string]string) ([]models.Order, error) {
 	resp, err := api.doRequest("GET", "me/getchildorders", query, nil)
 	if err != nil {
 		return nil, err
 	}
-	var responseListOrder []Order
+	var responseListOrder []models.Order
 	err = json.Unmarshal(resp, &responseListOrder)
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ module cryptocurrency
 go 1.12
 
 require (
+	github.com/bitly/go-simplejson v0.5.0
 	github.com/dgrijalva/jwt-go v0.0.0-20180921172315-3af4c746e1c2
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/websocket v0.0.0-20190427040306-80c2d40e9b91

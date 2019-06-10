@@ -34,9 +34,15 @@ type ConfigList struct {
 var Config ConfigList
 
 func Env_load() {
-	err := godotenv.Load()
+	var err error
+
+	// Read .env file at test time.
+	err = godotenv.Load("../.env")
 	if err != nil {
-		log.Println("There is no .env file. This application is running on Heroku.")
+		err = godotenv.Load()
+		if err != nil {
+			log.Println("There is no .env file. This application is running on Heroku.")
+		}
 	}
 }
 
