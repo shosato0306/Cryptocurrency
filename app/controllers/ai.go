@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"strconv"
+	"cryptocurrency/quoine"
 	"log"
 	"math"
 	"strings"
@@ -21,8 +23,15 @@ const (
 	ApiFeePercent = 0.0012
 )
 
+type API interface {
+	GetTicker(string) (*models.Ticker, error)
+	GetBalance() ([]models.Balance, error)
+	SendOrder(*models.Order) (string, error)
+	ListOrder(map[string]string) ([]models.Order, error) 
+}
+
 type AI struct {
-	API                  *bitflyer.APIClient
+	API                  API
 	ProductCode          string
 	CurrencyCode         string
 	CoinCode             string
@@ -43,7 +52,13 @@ type AI struct {
 var Ai *AI
 
 func NewAI(productCode string, duration time.Duration, pastPeriod int, UsePercent, stopLimitPercent float64, backTest bool) *AI {
-	apiClient := bitflyer.New(config.Config.ApiKey, config.Config.ApiSecret)
+	var apiClient API
+	if config.Config.Exchange == "bitflyer" {
+		apiClient = bitflyer.New(config.Config.ApiKey, config.Config.ApiSecret)
+	} else if config.Config.Exchange == "quoine" {
+		apiClient = quoine.New(config.Config.ApiKey, config.Config.ApiSecret)
+	}
+
 	var signalEvents *models.SignalEvents
 	if backTest {
 		signalEvents = models.NewSignalEvents()
@@ -105,7 +120,7 @@ func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderC
 	size := 1 / (ticker.BestAsk / useCurrency)
 	size = ai.AdjustSize(size)
 
-	order := &bitflyer.Order{
+	order := &models.Order{
 		ProductCode:     ai.ProductCode,
 		ChildOrderType:  "MARKET",
 		Side:            "BUY",
@@ -114,20 +129,22 @@ func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderC
 		TimeInForce:     "GTC",
 	}
 	log.Printf("status=buy candle=%+v order=%+v", candle, order)
-	resp, err := ai.API.SendOrder(order)
+	childOrderAcceptanceID, err = ai.API.SendOrder(order)
 	if err != nil {
 		slack.Notice("notification", "Send order failed: " + err.Error())
 		log.Println("Send order failed: ", err)
 		return
 	}
-	if resp.ChildOrderAcceptanceID == "" {
-		// Insufficient fund
+	if childOrderAcceptanceID == "" {
 		slack.Notice("notification", "Insufficient fund")
 		log.Printf("order=%+v status=no_id", order)
 		return
 	}
-	childOrderAcceptanceID = resp.ChildOrderAcceptanceID
-	isOrderCompleted = ai.WaitUntilOrderComplete(childOrderAcceptanceID, candle.Time)
+	if config.Config.Exchange == "bitflyer" {
+		isOrderCompleted = ai.WaitUntilOrderCompleteBitflyer(childOrderAcceptanceID, candle.Time)
+	} else {
+		isOrderCompleted = ai.WaitUntilOrderCompleteQuoine(childOrderAcceptanceID, candle.Time)		
+	}
 	return childOrderAcceptanceID, isOrderCompleted
 }
 
@@ -148,7 +165,7 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 	_, availableCoin := ai.GetAvailableBalance()
 	size := ai.AdjustSize(availableCoin)
 
-	order := &bitflyer.Order{
+	order := &models.Order{
 		ProductCode:     ai.ProductCode,
 		ChildOrderType:  "MARKET",
 		Side:            "SELL",
@@ -157,24 +174,29 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 		TimeInForce:     "GTC",
 	}
 	log.Printf("status=sell candle=%+v order=%+v", candle, order)
-	resp, err := ai.API.SendOrder(order)
+	childOrderAcceptanceID, err := ai.API.SendOrder(order)
 	if err != nil {
 		slack.Notice("notification", "Send order failed: " + err.Error())
 		log.Println("Send order failed: ", err)
 		return
 	}
-	if resp.ChildOrderAcceptanceID == "" {
+	if childOrderAcceptanceID == "" {
 		// Insufficient fund
 		slack.Notice("notification", "Insufficient fund")
 		log.Printf("order=%+v status=no_id", order)
 		return
 	}
-	childOrderAcceptanceID = resp.ChildOrderAcceptanceID
-
-	isOrderCompleted = ai.WaitUntilOrderComplete(childOrderAcceptanceID, candle.Time)
+	if config.Config.Exchange == "bitflyer" {
+		isOrderCompleted = ai.WaitUntilOrderCompleteBitflyer(childOrderAcceptanceID, candle.Time)
+	} else {
+		isOrderCompleted = ai.WaitUntilOrderCompleteQuoine(childOrderAcceptanceID, candle.Time)		
+	}
 	return childOrderAcceptanceID, isOrderCompleted
 }
 
+// 新規に Candle 情報が作成され、なおかつ設定したトレード期間に一致した場合に、
+// インディケータのパラメータの最適化と売買判断を実行する。
+// streaming.go によって呼び出される
 func (ai *AI) Trade() {
 	isAcquire := ai.TradeSemaphore.TryAcquire(1)
 	if !isAcquire {
@@ -314,7 +336,8 @@ func (ai *AI) AdjustSize(size float64) float64 {
 	return math.Floor(size*10000) / 10000
 }
 
-func (ai *AI) WaitUntilOrderComplete(childOrderAcceptanceID string, executeTime time.Time) bool {
+// For BITFLYER
+func (ai *AI) WaitUntilOrderCompleteBitflyer(childOrderAcceptanceID string, executeTime time.Time) bool {
 	params := map[string]string{
 		"product_code":              ai.ProductCode,
 		"child_order_acceptance_id": childOrderAcceptanceID,
@@ -354,6 +377,78 @@ func (ai *AI) WaitUntilOrderComplete(childOrderAcceptanceID string, executeTime 
 					}
 					return false
 				}
+			}
+		}
+	}()
+}
+
+// For QUOINE
+func (ai *AI) WaitUntilOrderCompleteQuoine(orderID string, executeTime time.Time) bool {
+	params := map[string]string{
+		// "product_code":              ai.ProductCode,
+		// "child_order_acceptance_id": childOrderAcceptanceID,
+		"orderID": orderID,
+	}
+	expire := time.After(time.Minute + (20 * time.Second))
+	interval := time.Tick(5 * time.Second)
+	return func() bool {
+		for {
+			select {
+			case <-expire:
+				return false
+			case <-interval:
+				listOrders, err := ai.API.ListOrder(params)
+				if err != nil {
+					return false
+				}
+				if len(listOrders) == 0 {
+					return false
+				}
+				order := listOrders[0]
+				if order.Status == "filled" {
+					if order.Side == "buy" {
+						tradedPrice := order.Price * order.FilledQuantity
+						couldBuy := ai.SignalEvents.Buy(ai.ProductCode, executeTime, tradedPrice, order.FilledQuantity, true)
+						// if !couldBuy {
+						if couldBuy {
+							strTradePrice := strconv.FormatFloat(tradedPrice, 'f', 4, 64)
+							slack.Notice("trade", "BUY process completed ! ==> " + strTradePrice)
+							log.Printf("status=buy orderID=%s order=%+v", orderID, order)
+						}
+						return couldBuy
+					}
+					if order.Side == "sell" {
+						tradedPrice := order.Price * order.FilledQuantity
+						couldSell := ai.SignalEvents.Sell(ai.ProductCode, executeTime, tradedPrice, order.FilledQuantity, true)
+						// if !couldSell {
+						if couldSell {
+							strTradePrice := strconv.FormatFloat(tradedPrice, 'f', 4, 64)
+							slack.Notice("trade", "SELL process completed ! ==> " + strTradePrice)
+							log.Printf("status=sell orderID=%s order=%+v", orderID, order)
+						}
+						return couldSell
+					}
+					return false
+				}
+				// ChildOrderState == "COMPLETED" {
+				// 	if order.Side == "BUY" {
+				// 		couldBuy := ai.SignalEvents.Buy(ai.ProductCode, executeTime, order.AveragePrice, order.Size, true)
+				// 		if !couldBuy {
+				// 			slack.Notice("trade", "BUY process completed !")
+				// 			log.Printf("status=buy childOrderAcceptanceID=%s order=%+v", childOrderAcceptanceID, order)
+				// 		}
+				// 		return couldBuy
+				// 	}
+				// 	if order.Side == "SELL" {
+				// 		couldSell := ai.SignalEvents.Sell(ai.ProductCode, executeTime, order.AveragePrice, order.Size, true)
+				// 		if !couldSell {
+				// 			slack.Notice("trade", "SELL process completed !")
+				// 			log.Printf("status=sell childOrderAcceptanceID=%s order=%+v", childOrderAcceptanceID, order)
+				// 		}
+				// 		return couldSell
+				// 	}
+				// 	return false
+				// }
 			}
 		}
 	}()

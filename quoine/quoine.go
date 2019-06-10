@@ -3,7 +3,6 @@ package quoine
 import (
 	"bytes"
 	"cryptocurrency/slack"
-	"cryptocurrency/bitflyer"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -14,6 +13,7 @@ import (
 	"time"
 	"fmt"
 
+	"cryptocurrency/app/models"
 	"cryptocurrency/config"
 
 	"github.com/dgrijalva/jwt-go"
@@ -79,7 +79,7 @@ type Product struct {
 
 const APP_KEY = "2ff981bb060680b5ce97"
 
-func (api *APIClient) GetRealTimeProduct(symbol string, ch chan<- *bitflyer.Ticker) {
+func (api *APIClient) GetRealTimeProduct(symbol string, ch chan<- *models.Ticker) {
 INIT:
 	log.Println("init...")
 
@@ -115,7 +115,7 @@ INIT:
 
 	log.Println("init done")
 
-	slack.Notice("notification", "Initialization of connection to quine is complete")
+	slack.Notice("notification", "======= Initialization of connection to QUOINE is complete")
 
 	for {
 		select {
@@ -129,11 +129,10 @@ INIT:
 			}
 
 			productCode := product.BaseCurrency + "_" + product.Currency
-
 			eventTimestamp := strings.Split(product.LastEventTimestamp, ".")[0]
 			intEventTimestamp, _ := strconv.ParseInt(eventTimestamp, 10, 64)
 			strEventTimestamp := time.Unix(intEventTimestamp, 0).UTC().Format(time.RFC3339)
-			Ticker := bitflyer.NewTicker(productCode, strEventTimestamp, product.MarketBid, product.MarketAsk, product.Volume24H)
+			Ticker := models.NewTicker(productCode, strEventTimestamp, product.MarketBid, product.MarketAsk, product.Volume24H)
 
 			ch <- Ticker
 
@@ -184,26 +183,37 @@ func (api *APIClient) doRequest(method, urlPath string, query map[string]string,
 
 type Balances []struct {
 	Currency string `json:"currency"`
-	Balance  string `json:"balance"`
+	Balance  float64 `json:"balance,string"`
 }
 
-func (api *APIClient) GetBalances() (Balances, error){
+func (api *APIClient) GetBalance() ([]models.Balance, error){
 	url := "/accounts/balance"
 	var balances Balances
+	var standardized_balances []models.Balance
 	resp, err := api.doRequest("GET", url, nil, nil)
 	if err != nil {
 		log.Printf("action=GETBalances err=%s", err.Error())
-		return balances, err
+		return standardized_balances, err
 	}
 	err = json.Unmarshal(resp, &balances)
 	if err != nil {
 		log.Printf("action=GETBalances(unmarshal) err=%s", err.Error())
-		return balances, err
+		return standardized_balances, err
 	}
-	return balances, err
+ 
+
+	for _, b := range balances {
+		balance := models.Balance {
+			CurrentCode: b.Currency,
+			Amount: 0,
+			Available: b.Balance,
+		}
+		standardized_balances = append(standardized_balances, balance)
+	}
+	return standardized_balances, err
 }
 
-func (api *APIClient) GetProduct() (Product, error) {
+func (api *APIClient) GetProduct(productCode string) (Product, error) {
 	url := "/products/5"
 	var product Product
 	resp, err := api.doRequest("GET", url, nil, nil)
@@ -219,22 +229,45 @@ func (api *APIClient) GetProduct() (Product, error) {
 	return product, err
 }
 
-func (api *APIClient) GetExecutions() {
-	url := "/executions/me?product_id=5"
-	// var product Product
+func (api *APIClient) GetTicker(productCode string) (*models.Ticker, error) {
+	url := "/products/5"
+	var product Product
+	var ticker *models.Ticker
 	resp, err := api.doRequest("GET", url, nil, nil)
-	log.Println(string(resp))
 	if err != nil {
-		log.Printf("action=GetExecutions err=%s", err.Error())
-		// return product
+		log.Printf("action=GetProduct err=%s", err.Error())
+		return ticker, err
 	}
-	// err = json.Unmarshal(resp, &product)
-	// if err != nil {
-	// 	log.Printf("action=GetOrders(unmarshal) err=%s", err.Error())
-		// return product
-	// }
-	// return product
+	err = json.Unmarshal(resp, &product)
+	if err != nil {
+		log.Printf("action=GetProduct(unmarshal) err=%s", err.Error())
+		return ticker, err
+	}
+
+	productCode = product.BaseCurrency + "_" + product.Currency
+	eventTimestamp := strings.Split(product.LastEventTimestamp, ".")[0]
+	intEventTimestamp, _ := strconv.ParseInt(eventTimestamp, 10, 64)
+	strEventTimestamp := time.Unix(intEventTimestamp, 0).UTC().Format(time.RFC3339)
+	ticker = models.NewTicker(productCode, strEventTimestamp, product.MarketBid, product.MarketAsk, product.Volume24H)
+	return ticker, err
 }
+
+// func (api *APIClient) GetExecutions() {
+// 	url := "/executions/me?product_id=5"
+// 	// var product Product
+// 	resp, err := api.doRequest("GET", url, nil, nil)
+// 	log.Println(string(resp))
+// 	if err != nil {
+// 		log.Printf("action=GetExecutions err=%s", err.Error())
+// 		// return product
+// 	}
+// 	// err = json.Unmarshal(resp, &product)
+// 	// if err != nil {
+// 	// 	log.Printf("action=GetOrders(unmarshal) err=%s", err.Error())
+// 		// return product
+// 	// }
+// 	// return product
+// }
 
 type Order struct {
 	OrderDetail  OrderDetail `json:"order"`
@@ -244,7 +277,7 @@ type OrderDetail struct {
 	OrderType string `json:"order_type"`
 	ProductID int    `json:"product_id"`
 	Side      string `json:"side"`
-	Quantity  string `json:"quantity"`
+	Quantity  float64 `json:"quantity,string"`
 }
 
 type ResponseSendChildOrder struct {
@@ -275,69 +308,57 @@ type ResponseSendChildOrder struct {
 }
 
 
-func (api *APIClient) SendOrder(side, quantity string) (*ResponseSendChildOrder, error) {
+func (api *APIClient) SendOrder(req_order *models.Order) (string, error) {
 	var order Order
 	order = Order{
 		OrderDetail: OrderDetail {
 			OrderType: "market",
 			ProductID: 5, 
-			Side: side, 
-			Quantity: quantity, 
+			Side: strings.ToLower(req_order.Side), 
+			Quantity: req_order.Size, 
 		},
 	}
 
 	data, _ := json.Marshal(order)
-	fmt.Println(string(data))
+	// fmt.Println(string(data))
     url := "/orders/"
 	resp, err := api.doRequest("POST", url, map[string]string{}, data)
     if err != nil {
         log.Printf("Order Request fail, err=%s", err.Error())
-        return nil, err
+        return "", err
     }
     var response ResponseSendChildOrder
     err = json.Unmarshal(resp, &response)
     if err != nil {
         log.Printf("Order Request Unmarshal fail, err=%s", err.Error())
+        return "", err
+	}
+	orderID := strconv.Itoa(response.ID)
+	// if orderID == "" {
+	// 	slack.Notice("notification",  "Insufficient fund")
+	// } else {
+	// 	slack.Notice("trade", "Trade completed!! Side: " +  response.Side + ", Price: " + strconv.FormatFloat(response.Price * response.FilledQuantity, 'f', 0, 64))
+	// }
+    return orderID , nil
+}
+
+// GetOrder 注文IDの情報を取得する
+func (api *APIClient) ListOrder(params map[string]string) ([]models.Order, error) {
+	var orders []models.Order
+	var order models.Order
+    spath := fmt.Sprintf("/orders/" + params["orderID"])
+	resp, err := api.doRequest("GET", spath, nil, nil)
+	// log.Println(string(resp))	
+    if err != nil {
+        log.Printf("Get Order Request Error, err = %s", err.Error())
         return nil, err
     }
-    return &response, nil
-}
 
-// // GetOrder 注文IDの情報を取得する
-// func (api *APIClient) GetOrder(orderID int) (*Order, error) {
-//     var getOrder *Order
-//     // spath := fmt.Sprintf("/orders/%d", orderID)
-//     spath := fmt.Sprintf("/orders?with_details=1")
-// 	resp, err := api.doRequest("GET", spath, nil, nil)
-// 	log.Println(string(resp))	
-//     if err != nil {
-//         log.Printf("Get Order Request Error, err = %s", err.Error())
-//         return nil, err
-//     }
-
-//     err = json.Unmarshal(resp, &getOrder)
-//     if err != nil {
-//         log.Printf("Get Order Request Unmarshal Error, err = %s", err.Error())
-//         return nil, err
-//     }
-//     return getOrder, nil
-// }
-
-
-// 売値と買値の中間の値を取得
-func (p *Product) GetMidPrice() float64 {
-	return (p.MarketBid + p.MarketAsk) / 2
-}
-
-func (p *Product) DateTime() time.Time {
-	// LastEventTimestamp が適当な値かは確認が必要
-	dateTime, err := time.Parse(time.RFC3339, p.LastEventTimestamp)
-	if err != nil {
-		log.Printf("action=DateTime, err=%s", err.Error())
+    err = json.Unmarshal(resp, &order)
+    if err != nil {
+        log.Printf("Get Order Request Unmarshal Error, err = %s", err.Error())
+        return nil, err
 	}
-	return dateTime
-}
-
-func (p *Product) TruncateDateTime(duration time.Duration) time.Time {
-	return p.DateTime().Truncate(duration)
+	orders = append(orders, order)
+    return orders, nil
 }

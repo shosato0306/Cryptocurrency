@@ -1,7 +1,6 @@
 package models
 
 import (
-	"cryptocurrency/bitflyer"
 	"fmt"
 	"log"
 	"strings"
@@ -74,7 +73,7 @@ func GetCandle(productCode string, duration time.Duration, dateTime time.Time) *
 	return NewCandle(productCode, duration, candle.Time, candle.Open, candle.Close, candle.High, candle.Low, candle.Volume)
 }
 
-func CreateCandleWithDuration(ticker bitflyer.Ticker, productCode string, duration time.Duration) bool {
+func CreateCandleWithDuration(ticker Ticker, productCode string, duration time.Duration) bool {
 	currentCandle := GetCandle(productCode, duration, ticker.TruncateDateTime(duration))
 	price := ticker.GetMidPrice()
 	// DB にまだ対象 duration の Candle 情報が格納されていない場合は、新規に Candle を作成し DB に格納する。

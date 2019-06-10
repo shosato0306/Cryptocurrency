@@ -3,57 +3,69 @@ package quoine
 import (
 	"testing"
 	"log"
-	"strconv"
 	"cryptocurrency/config"
-	"cryptocurrency/slack"
+	"cryptocurrency/app/models"
 )
 
-func TestGetBalances(t *testing.T) {
-	// t.Skip("... skip TestGetBalances")
+func TestGetBalance(t *testing.T) {
+	t.Skip("... skip TestGetBalances")
 	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
-	balances, err := apiClient.GetBalances()
+	balances, err := apiClient.GetBalance()
 	if err != nil {
 		t.Fatal(err)
 	}
 	log.Printf("balances => %+v", balances)
 }
 
-func TestGetProduct(t *testing.T) {
-	// t.Skip("... skip TestGetProduct")
+func TestGetTicker(t *testing.T) {
+	t.Skip("... skip TestGetProduct")
 	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
-	product, err := apiClient.GetProduct()
+	ticker, err := apiClient.GetTicker("Dummy string")
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("product => %+v", product)
+	log.Printf("ticker => %+v", ticker)
 }
 
-func TestGetExecutions(t *testing.T) {
-	// t.Skip("... skip TestGetExecutions")
-	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
-	apiClient.GetExecutions()
-}
-
-// func TestGetOrder(t *testing.T) {
-// 	// t.Skip("... skip TestGetOrders")
+// func TestGetExecutions(t *testing.T) {
+// 	t.Skip("... skip TestGetExecutions")
 // 	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
-// 	order, err := apiClient.GetOrder(132349532)
-// 	if err != nil {
-// 		t.Error()
-// 	}
-// 	fmt.Printf("%+v", order)
+// 	apiClient.GetExecutions()
 // }
+
+func TestListOrder(t *testing.T) {
+	// t.Skip("... skip TestGetOrders")
+	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
+	params := map[string]string{"orderID":"1137604402"}
+	order, err := apiClient.ListOrder(params)
+	if err != nil {
+		t.Error()
+	}
+	log.Printf("%+v", order)
+	log.Println(order[0].Status)
+	log.Println(order[0].Side)
+	log.Println(order[0].FilledQuantity)
+}
 
 func TestSendOrder(t *testing.T) {
 	t.Skip("... skip TestSendOrder")
 	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
-	response, err := apiClient.SendOrder("buy", "0.001")
+	order := &models.Order{
+		ProductCode:     "BTC_JPY",
+		ChildOrderType:  "MARKET",
+		Side:            "SELL", // 小文字でなければならない！！
+		Size:            0.001,
+		MinuteToExpires: 1,
+		TimeInForce:     "GTC",
+	}
+	_, err := apiClient.SendOrder(order)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if response.ID == 0 {
-		slack.Notice("notification",  "Insufficient fund")
-	} else {
-		slack.Notice("trade", "Trade completed!! Side: " +  response.Side + ", Price: " + strconv.FormatFloat(response.Price * response.FilledQuantity, 'f', 0, 64))
-	}
+	// if response == "0" {
+	// 	slack.Notice("notification",  "Insufficient fund")
+	// } 
+	// else {
+	// 	slack.Notice("trade", "Trade completed!! Side: " +  response.Side + ", Price: " + strconv.FormatFloat(response.Price * response.FilledQuantity, 'f', 0, 64))
+	// }
 }
