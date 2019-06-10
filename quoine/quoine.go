@@ -12,6 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"fmt"
+
+	"cryptocurrency/config"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/toorop/go-pusher"
@@ -36,9 +39,9 @@ func (api APIClient) header(method, endpoint string, body []byte) map[string]str
 	token.Claims = jwt.MapClaims{
 		"path":     endpoint,
 		"nonce":    strconv.FormatInt(time.Now().Unix(), 10),
-		"token_id": "APIキーをここに",
+		"token_id": config.Config.ApiKey,
 	}
-	signature, _ := token.SignedString([]byte("APIシークレットをここに"))
+	signature, _ := token.SignedString([]byte(config.Config.ApiSecret))
 	return map[string]string{
 		"X-Quoine-Auth":        signature,
 		"X-Quoine-API-Version": "2",
@@ -47,7 +50,7 @@ func (api APIClient) header(method, endpoint string, body []byte) map[string]str
 }
 
 type Product struct {
-	ID                  int     `json:"id"`
+	ID                  json.Number     `json:"id"`
 	ProductType         string  `json:"product_type"`
 	Code                string  `json:"code"`
 	Name                string  `json:"name"`
@@ -179,28 +182,147 @@ func (api *APIClient) doRequest(method, urlPath string, query map[string]string,
 	return body, nil
 }
 
-// // TODO
-// type Balance struct {
-// 	Currency string `json:"currency"`
-// 	Balance  string `json:"balance"`
+type Balances []struct {
+	Currency string `json:"currency"`
+	Balance  string `json:"balance"`
+}
+
+func (api *APIClient) GetBalances() (Balances, error){
+	url := "/accounts/balance"
+	var balances Balances
+	resp, err := api.doRequest("GET", url, nil, nil)
+	if err != nil {
+		log.Printf("action=GETBalances err=%s", err.Error())
+		return balances, err
+	}
+	err = json.Unmarshal(resp, &balances)
+	if err != nil {
+		log.Printf("action=GETBalances(unmarshal) err=%s", err.Error())
+		return balances, err
+	}
+	return balances, err
+}
+
+func (api *APIClient) GetProduct() (Product, error) {
+	url := "/products/5"
+	var product Product
+	resp, err := api.doRequest("GET", url, nil, nil)
+	if err != nil {
+		log.Printf("action=GetProduct err=%s", err.Error())
+		return product, err
+	}
+	err = json.Unmarshal(resp, &product)
+	if err != nil {
+		log.Printf("action=GetProduct(unmarshal) err=%s", err.Error())
+		return product, err
+	}
+	return product, err
+}
+
+func (api *APIClient) GetExecutions() {
+	url := "/executions/me?product_id=5"
+	// var product Product
+	resp, err := api.doRequest("GET", url, nil, nil)
+	log.Println(string(resp))
+	if err != nil {
+		log.Printf("action=GetExecutions err=%s", err.Error())
+		// return product
+	}
+	// err = json.Unmarshal(resp, &product)
+	// if err != nil {
+	// 	log.Printf("action=GetOrders(unmarshal) err=%s", err.Error())
+		// return product
+	// }
+	// return product
+}
+
+type Order struct {
+	OrderDetail  OrderDetail `json:"order"`
+}
+
+type OrderDetail struct {
+	OrderType string `json:"order_type"`
+	ProductID int    `json:"product_id"`
+	Side      string `json:"side"`
+	Quantity  string `json:"quantity"`
+}
+
+type ResponseSendChildOrder struct {
+    ID                   int         `json:"id"`
+    OrderType            string      `json:"order_type"`
+    Quantity             float64     `json:"quantity,string"`
+    DiscQuantity         string      `json:"disc_quantity"`
+    IcebergTotalQuantity string      `json:"iceberg_total_quantity"`
+    Side                 string      `json:"side"`
+    FilledQuantity       float64     `json:"filled_quantity,string"`
+    Price                float64     `json:"price"`
+    CreatedAt            int         `json:"created_at"`
+    UpdatedAt            int         `json:"updated_at"`
+    Status               string      `json:"status"`
+    LeverageLevel        int         `json:"leverage_level"`
+    SourceExchange       string      `json:"source_exchange"`
+    ProductID            int         `json:"product_id"`
+    ProductCode          string      `json:"product_code"`
+    FundingCurrency      string      `json:"funding_currency"`
+    CryptoAccountID      interface{} `json:"crypto_account_id"`
+    CurrencyPairCode     string      `json:"currency_pair_code"`
+    AveragePrice         float64     `json:"average_price"`
+    Target               string      `json:"target"`
+    OrderFee             float64     `json:"order_fee"`
+    SourceAction         string      `json:"source_action"`
+    UnwoundTradeID       interface{} `json:"unwound_trade_id"`
+    TradeID              interface{} `json:"trade_id"`
+}
+
+
+func (api *APIClient) SendOrder(side, quantity string) (*ResponseSendChildOrder, error) {
+	var order Order
+	order = Order{
+		OrderDetail: OrderDetail {
+			OrderType: "market",
+			ProductID: 5, 
+			Side: side, 
+			Quantity: quantity, 
+		},
+	}
+
+	data, _ := json.Marshal(order)
+	fmt.Println(string(data))
+    url := "/orders/"
+	resp, err := api.doRequest("POST", url, map[string]string{}, data)
+    if err != nil {
+        log.Printf("Order Request fail, err=%s", err.Error())
+        return nil, err
+    }
+    var response ResponseSendChildOrder
+    err = json.Unmarshal(resp, &response)
+    if err != nil {
+        log.Printf("Order Request Unmarshal fail, err=%s", err.Error())
+        return nil, err
+    }
+    return &response, nil
+}
+
+// // GetOrder 注文IDの情報を取得する
+// func (api *APIClient) GetOrder(orderID int) (*Order, error) {
+//     var getOrder *Order
+//     // spath := fmt.Sprintf("/orders/%d", orderID)
+//     spath := fmt.Sprintf("/orders?with_details=1")
+// 	resp, err := api.doRequest("GET", spath, nil, nil)
+// 	log.Println(string(resp))	
+//     if err != nil {
+//         log.Printf("Get Order Request Error, err = %s", err.Error())
+//         return nil, err
+//     }
+
+//     err = json.Unmarshal(resp, &getOrder)
+//     if err != nil {
+//         log.Printf("Get Order Request Unmarshal Error, err = %s", err.Error())
+//         return nil, err
+//     }
+//     return getOrder, nil
 // }
 
-// // GetBalances 現在の総合資産を取得する
-// func (api *APIClient) GetBalances() []Balance {
-// 	url := "/accounts/balance"
-// 	var balances []Balance
-// 	resp, err := api.doRequest("GET", url, nil, nil)
-// 	if err != nil {
-// 		log.Printf("action=GETBalances err=%s", err.Error())
-// 		return balances
-// 	}
-// 	err = json.Unmarshal(resp, &balances)
-// 	if err != nil {
-// 		log.Printf("action=GETBalances(unmarshal) err=%s", err.Error())
-// 		return balances
-// 	}
-// 	return balances
-// }
 
 // 売値と買値の中間の値を取得
 func (p *Product) GetMidPrice() float64 {
