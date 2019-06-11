@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log"
 	"sort"
 	"time"
 
@@ -477,6 +478,15 @@ func (df *DataFrameCandle) OptimizeParams() *TradeParams {
 
 	rankings := []*Ranking{emaRanking, bbRanking, macdRanking, ichimokuRanking, rsiRanking}
 	sort.Slice(rankings, func(i, j int) bool { return rankings[i].Performance > rankings[j].Performance })
+	log.Println("### INDICATOR PERFORMANCE")
+	log.Println("ema: ", emaPerformance)
+	log.Println("bb: ", bbPerformance)
+	log.Println("macd: ", macdPerformance)
+	log.Println("ichimoku: ", ichimokuPerforamcne)
+	log.Println("rsi: ", rsiPerformance)
+	// for _, r := range rankings{
+	// 	log.Printf("%#v", r)
+	// }
 
 	isEnable := false
 	for i, ranking := range rankings {
