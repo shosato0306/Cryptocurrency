@@ -51,7 +51,7 @@ func init() {
 	Env_load()
 
 	durations := map[string]time.Duration{
-		"1s": time.Second,
+		// "1s": time.Second,
 		"1m": time.Minute,
 		"5m": time.Minute * 5,
 		"10m": time.Minute * 10,
@@ -62,10 +62,10 @@ func init() {
 		"6h": time.Hour * 6,
 		"12h": time.Hour * 12,
 		"1d": time.Hour * 24,
-		"2d": time.Hour * 48,
-		"3d": time.Hour * 72,
-		"1w": time.Hour * 168,
-		"1month": time.Hour * 720,
+		// "2d": time.Hour * 48,
+		// "3d": time.Hour * 72,
+		// "1w": time.Hour * 168,
+		// "1month": time.Hour * 720,
 	}
 
 	var apiKey, apiSecret string
