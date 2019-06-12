@@ -62,7 +62,7 @@ func CleanUpRecord() {
 	go func() {
 		for {
 			for _, duration := range c.Durations {
-				err := models.CleanCandleRecord(c.ProductCode, duration, 400)
+				err := models.CleanCandleRecord(c.ProductCode, duration, 2000)
 				if err != nil {
 					slack.Notice("notification", "CleanUpRecord failed: " + err.Error())
 					log.Fatal(err)
