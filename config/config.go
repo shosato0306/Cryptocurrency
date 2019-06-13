@@ -37,8 +37,8 @@ func Env_load() {
 	var err error
 
 	// Read .env file at test time.
-	// err = godotenv.Load("../../.env")
-	err = godotenv.Load("../.env")
+	err = godotenv.Load("../../.env")
+	// err = godotenv.Load("../.env")
 	if err != nil {
 		err = godotenv.Load()
 		if err != nil {

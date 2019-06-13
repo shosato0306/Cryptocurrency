@@ -1,6 +1,7 @@
 package quoine
 
 import (
+	"time"
 	"testing"
 	"log"
 	"cryptocurrency/config"
@@ -34,7 +35,7 @@ func TestGetTicker(t *testing.T) {
 // }
 
 func TestListOrder(t *testing.T) {
-	// t.Skip("... skip TestGetOrders")
+	t.Skip("... skip TestGetOrders")
 	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
 	params := map[string]string{"orderID":"1137604402"}
 	order, err := apiClient.ListOrder(params)
@@ -68,4 +69,31 @@ func TestSendOrder(t *testing.T) {
 	// else {
 	// 	slack.Notice("trade", "Trade completed!! Side: " +  response.Side + ", Price: " + strconv.FormatFloat(response.Price * response.FilledQuantity, 'f', 0, 64))
 	// }
+}
+
+func TestGetRealTimeProduct(t *testing.T) {
+	// t.Skip("... skip TestGetRealTimeProduct")
+	var tickerChannel = make(chan *models.Ticker)
+	apiClient := New(config.Config.ApiKey, config.Config.ApiSecret)
+	go apiClient.GetRealTimeProduct(config.Config.ProductCode, tickerChannel)
+	go func() {
+		for ticker := range tickerChannel {
+			// for _, duration := range config.Config.Durations {
+				// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+				// _ = models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+				// if isCreated == true && duration == config.Config.TradeDuration {
+				// if duration == config.Config.TradeDuration {
+					// log.Println("### Trade() is called")
+					// is_during_buy := false
+					// is_ordered = ai.Trade()
+					// ai.Trade()
+					// if call_count >= 5 && is_during_buy != false {
+					// 	ai.UpdateOptimizeParams(true)
+					// }
+				// }		
+			// }
+		log.Printf("ticker => %+v", ticker)
+		}
+	}()
+	time.Sleep(20 * time.Second)
 }
