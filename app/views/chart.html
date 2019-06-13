@@ -49,6 +49,17 @@
         .nav-link {
             color: white;
         }
+
+        .duration-btn {
+            border: 1px solid #ccc;
+            margin: 2px;
+            background-color: white;
+        }
+
+        .duration-active {
+            background-color: orange;
+            color: white;
+        }
     </style>
     <!-- ローダー自体の読み込み -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -81,22 +92,22 @@
             </header>
             <div class="row">
                 <div class="col-md-3 col" style="padding-left: 50px;">
-                    <div>
-                        <button onclick="changeDuration('1s');">1s</button>
-                        <button onclick="changeDuration('1m');">1m</button>
-                        <button onclick="changeDuration('5m');">5m</button>
-                        <button onclick="changeDuration('10m');">10m</button>
-                        <button onclick="changeDuration('15m');">15m</button>
-                        <button onclick="changeDuration('30m');">30m</button>
-                        <button onclick="changeDuration('1h');">1h</button>
-                        <button onclick="changeDuration('3h');">3h</button>
-                        <button onclick="changeDuration('6h');">6h</button>
-                        <button onclick="changeDuration('12h');">12h</button>
-                        <button onclick="changeDuration('1d');">1d</button>
-                        <button onclick="changeDuration('2d');">2d</button>
-                        <button onclick="changeDuration('3d');">3d</button>
-                        <button onclick="changeDuration('1w');">1w</button>
-                        <button onclick="changeDuration('1month');">1month</button>
+                    <div style="margin-bottom: 10px">
+                        <!-- <button onclick="changeDuration('1s');">1s</button> -->
+                        <button class="duration-btn btn duration-active" onclick="changeDuration('1m');">1m</button>
+                        <button class="duration-btn btn " onclick="changeDuration('5m');">5m</button>
+                        <button class="duration-btn btn " onclick="changeDuration('10m');">10m</button>
+                        <button class="duration-btn btn " onclick="changeDuration('15m');">15m</button>
+                        <button class="duration-btn btn " onclick="changeDuration('30m');">30m</button>
+                        <button class="duration-btn btn " onclick="changeDuration('1h');">1h</button>
+                        <button class="duration-btn btn " onclick="changeDuration('3h');">3h</button>
+                        <button class="duration-btn btn " onclick="changeDuration('6h');">6h</button>
+                        <button class="duration-btn btn " onclick="changeDuration('12h');">12h</button>
+                        <button class="duration-btn btn " onclick="changeDuration('1d');">1d</button>
+                        <!-- <button onclick="changeDuration('2d');">2d</button> -->
+                        <!-- <button onclick="changeDuration('3d');">3d</button> -->
+                        <!-- <button onclick="changeDuration('1w');">1w</button> -->
+                        <!-- <button onclick="changeDuration('1month');">1month</button> -->
                     </div>
 
                     <div>
@@ -166,3 +177,13 @@
 </body>
 
 </html>
+
+<script>
+    $(function(){
+        var durationBtn = $('.duration-btn');
+        durationBtn.click(function(){
+            durationBtn.removeClass('duration-active');
+            $(this).addClass('duration-active');
+        });
+    });
+</script>
