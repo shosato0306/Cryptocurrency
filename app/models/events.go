@@ -75,7 +75,8 @@ func GetSignalEventsByCount(loadEvents int) *SignalEvents {
 }
 
 func GetSignalEventsAfterTime(timeTime time.Time) *SignalEvents {
-	cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+	// cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+	cmd := fmt.Sprintf(`SELECT time, product_code, side, price, size FROM %s WHERE time IN (
 			SELECT time FROM %s
 			WHERE time >= ?
 			ORDER BY time DESC
