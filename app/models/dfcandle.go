@@ -269,8 +269,8 @@ func (df *DataFrameCandle) OptimizeEma() (performance float64, bestPeriod1 int, 
 	bestPeriod2 = 14
 
 	// for period1 := 5; period1 < 11; period1++ {
-	for period1 := 3; period1 < 11; period1++ {
-		for period2 := 12; period2 < 20; period2++ {
+	for period1 := 4; period1 < 8; period1++ {
+		for period2 := 9; period2 < 20; period2++ {
 			signalEvents := df.BackTestEma(period1, period2)
 			if signalEvents == nil {
 				continue
@@ -321,7 +321,7 @@ func (df *DataFrameCandle) OptimizeBb() (performance float64, bestN int, bestK f
 	bestN = 20
 	bestK = 2.0
 
-	for n := 10; n < 20; n++ {
+	for n := 8; n < 20; n++ {
 		for k := 1.9; k < 2.1; k += 0.1 {
 			signalEvents := df.BackTestBb(n, k)
 			if signalEvents == nil {
@@ -411,8 +411,8 @@ func (df *DataFrameCandle) OptimizeMacd() (performance float64, bestMacdFastPeri
 	bestMacdSlowPeriod = 26
 	bestMacdSignalPeriod = 9
 
-	for fastPeriod := 10; fastPeriod < 19; fastPeriod++ {
-		for slowPeriod := 20; slowPeriod < 30; slowPeriod++ {
+	for fastPeriod := 7; fastPeriod < 16; fastPeriod++ {
+		for slowPeriod := 17; slowPeriod < 30; slowPeriod++ {
 			for signalPeriod := 5; signalPeriod < 15; signalPeriod++ {
 				signalEvents := df.BackTestMacd(bestMacdFastPeriod, bestMacdSlowPeriod, bestMacdSignalPeriod)
 				if signalEvents == nil {
