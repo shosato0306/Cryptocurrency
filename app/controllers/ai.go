@@ -89,6 +89,7 @@ func NewAI(productCode string, duration time.Duration, pastPeriod int, UsePercen
 func (ai *AI) UpdateOptimizeParams(isContinue bool) {
 	df, _ := models.GetAllCandle(ai.ProductCode, ai.Duration, ai.PastPeriod)
 	ai.OptimizedTradeParams = df.OptimizeParams()
+	log.Println("### UpdateOptimizedParams() is called....")
 	log.Printf("optimized_trade_params=%+v", ai.OptimizedTradeParams)
 	if ai.OptimizedTradeParams == nil && isContinue && !ai.BackTest {
 		log.Print("status_no_params")
@@ -308,6 +309,10 @@ func (ai *AI) Trade() {
 			_, isOrderCompleted := ai.Sell(df.Candles[i])
 			if !isOrderCompleted {
 				continue
+			}
+			if ai.StopLimit > df.Candles[i].Close {
+				log.Println("### Stop Limit !!!")
+				slack.Notice("trade", "Stop Limit !!!")
 			}
 			ai.StopLimit = 0.0
 			ai.UpdateOptimizeParams(true)

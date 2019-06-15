@@ -22,6 +22,7 @@ func (s *SignalEvent) Save() bool {
 	cmd := fmt.Sprintf("INSERT INTO %s (time, product_code, side, price, size) VALUES (?, ?, ?, ?, ?);", tableNameSignalEvents)
 	_, err := DB.Exec(cmd, s.Time, s.ProductCode, s.Side, s.Price, s.Size)
 	if err != nil {
+		// time が主キーではなくなるため以下のチェックは不要になる予定
 		if strings.Contains(err.Error(), "Duplicate entry") {
 			log.Println("Insert record error: ", err)
 			return true
@@ -44,9 +45,13 @@ func NewSignalEvents() *SignalEvents {
 // 実際に取引を行っている場合(Backtest == False)の場合の処理
 // DB から指定した個数分だけ最新の signalevent 情報を取得する
 func GetSignalEventsByCount(loadEvents int) *SignalEvents {
-	cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
-        SELECT tmp.time FROM (SELECT time FROM %s WHERE product_code = ? ORDER BY time DESC LIMIT ? ) AS tmp)
-		ORDER BY time ASC;`, tableNameSignalEvents, tableNameSignalEvents)
+	// cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+    //     SELECT tmp.time FROM (SELECT time FROM %s WHERE product_code = ? ORDER BY time DESC LIMIT ? ) AS tmp)
+	// 	ORDER BY time ASC;`, tableNameSignalEvents, tableNameSignalEvents)
+	// cmd := fmt.Sprintf(`SELECT * FROM %s WHERE id IN (
+	cmd := fmt.Sprintf(`SELECT time, product_code, side, price, size FROM %s WHERE id IN (
+        SELECT tmp.id FROM (SELECT id FROM %s WHERE product_code = ? ORDER BY id DESC LIMIT ? ) AS tmp)
+		ORDER BY id ASC;`, tableNameSignalEvents, tableNameSignalEvents)
 
 	rows, err := DB.Query(cmd, config.Config.ProductCode, loadEvents)
 	if err != nil {
@@ -70,7 +75,8 @@ func GetSignalEventsByCount(loadEvents int) *SignalEvents {
 }
 
 func GetSignalEventsAfterTime(timeTime time.Time) *SignalEvents {
-	cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+	// cmd := fmt.Sprintf(`SELECT * FROM %s WHERE time IN (
+	cmd := fmt.Sprintf(`SELECT time, product_code, side, price, size FROM %s WHERE time IN (
 			SELECT time FROM %s
 			WHERE time >= ?
 			ORDER BY time DESC
@@ -99,7 +105,8 @@ func (s *SignalEvents) CanBuy(time time.Time) bool {
 	}
 
 	lastSignal := s.Signals[lenSignals-1]
-	if lastSignal.Side == "SELL" && lastSignal.Time.Before(time) {
+	// if lastSignal.Side == "SELL" && lastSignal.Time.Before(time) {
+	if lastSignal.Side == "SELL" && (lastSignal.Time.Before(time) || lastSignal.Time.Equal(time)) {
 		return true
 	}
 	return false
@@ -112,7 +119,8 @@ func (s *SignalEvents) CanSell(time time.Time) bool {
 	}
 
 	lastSignal := s.Signals[lenSignals-1]
-	if lastSignal.Side == "BUY" && lastSignal.Time.Before(time) {
+	// if lastSignal.Side == "BUY" && lastSignal.Time.Before(time) {
+	if lastSignal.Side == "BUY" && (lastSignal.Time.Before(time) || lastSignal.Time.Equal(time)) {
 		return true
 	}
 	return false

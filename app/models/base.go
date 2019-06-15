@@ -35,9 +35,19 @@ func init() {
 
 	// TIMESTAMP 型の　CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP　を回避するため
 	// time に DEFAULT を設定
+	// cmd := fmt.Sprintf(`
+    //     CREATE TABLE IF NOT EXISTS %s (
+    //         time TIMESTAMP PRIMARY KEY NOT NULL DEFAULT '2030-12-30 12:00:00',
+    //         product_code VARCHAR(255),
+    //         side VARCHAR(255),
+    //         price DOUBLE,
+    //         size DOUBLE);`, tableNameSignalEvents)
+	// DB.Exec(cmd)
+
 	cmd := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s (
-            time TIMESTAMP PRIMARY KEY NOT NULL DEFAULT '2030-12-30 12:00:00',
+			id INT AUTO_INCREMENT NOT NULL PRIMARY KEY, 
+            time TIMESTAMP NOT NULL DEFAULT '2030-12-30 12:00:00',
             product_code VARCHAR(255),
             side VARCHAR(255),
             price DOUBLE,

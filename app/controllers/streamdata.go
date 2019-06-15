@@ -34,14 +34,23 @@ func StreamIngestionData() {
 		var tickerChannel = make(chan *models.Ticker)
 		apiClient := quoine.New(config.Config.ApiKey, config.Config.ApiSecret)
 		go apiClient.GetRealTimeProduct(config.Config.ProductCode, tickerChannel)
+		// is_ordered := false
+		// call_count := 0
 		go func() {
 			for ticker := range tickerChannel {
 				for _, duration := range config.Config.Durations {
-					isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
-					if isCreated == true && duration == config.Config.TradeDuration {
+					// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+					_ = models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+					// if isCreated == true && duration == config.Config.TradeDuration {
+					if duration == config.Config.TradeDuration {
 						// log.Println("### Trade() is called")
+						// is_during_buy := false
+						// is_ordered = ai.Trade()
 						ai.Trade()
-					}
+						// if call_count >= 5 && is_during_buy != false {
+						// 	ai.UpdateOptimizeParams(true)
+						// }
+					}			
 				}
 			}
 		}()
@@ -53,7 +62,7 @@ func CleanUpRecord() {
 	go func() {
 		for {
 			for _, duration := range c.Durations {
-				err := models.CleanCandleRecord(c.ProductCode, duration, c.DataLimit)
+				err := models.CleanCandleRecord(c.ProductCode, duration, 2000)
 				if err != nil {
 					slack.Notice("notification", "CleanUpRecord failed: " + err.Error())
 					log.Fatal(err)
