@@ -269,8 +269,8 @@ func (df *DataFrameCandle) OptimizeEma() (performance float64, bestPeriod1 int, 
 	bestPeriod2 = 14
 
 	// for period1 := 5; period1 < 11; period1++ {
-	for period1 := 4; period1 < 8; period1++ {
-		for period2 := 9; period2 < 20; period2++ {
+	for period1 := 4; period1 < 7; period1++ {
+		for period2 := 8; period2 < 20; period2++ {
 			signalEvents := df.BackTestEma(period1, period2)
 			if signalEvents == nil {
 				continue
