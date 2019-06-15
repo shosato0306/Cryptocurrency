@@ -54,6 +54,30 @@ func init() {
             size DOUBLE);`, tableNameSignalEvents)
 	DB.Exec(cmd)
 
+	cmd = `
+        CREATE TABLE IF NOT EXISTS results (
+			id INT AUTO_INCREMENT NOT NULL PRIMARY KEY, 
+			buy_time TIMESTAMP DEFAULT '2030-12-30 12:00:00',
+			sell_time TIMESTAMP DEFAULT '2030-12-30 12:00:00',
+			balance DOUBLE,
+			buy_price DOUBLE,
+			sell_price DOUBLE,
+			coin_price_buy DOUBLE,
+			coin_price_sell DOUBLE,
+            product_code VARCHAR(10),
+			exchange VARCHAR(20),
+			stop_limit_percent DOUBLE,
+			indicator VARCHAR(20),
+			param1 DOUBLE,
+			param2 DOUBLE,
+			param3 DOUBLE,
+			data_limit INTEGER,
+			trade_duration VARCHAR(10),
+			ref_duration1 VARCHAR(10),
+			ref_duration2 VARCHAR(10),
+			num_ranking INTEGER);`
+	DB.Exec(cmd)
+
 	for _, duration := range config.Config.Durations {
 		tableName := GetCandleTableName(config.Config.ProductCode, duration)
 		c := fmt.Sprintf(`

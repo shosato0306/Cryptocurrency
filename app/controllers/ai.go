@@ -7,6 +7,7 @@ import (
 	"math"
 	"strings"
 	"time"
+	"os"
 
 	"github.com/markcheno/go-talib"
 
@@ -19,9 +20,9 @@ import (
 	"cryptocurrency/slack"
 )
 
-const (
-	ApiFeePercent = 0.0012
-)
+// const (
+// 	ApiFeePercent = 0.0012
+// )
 
 type API interface {
 	GetTicker(string) (*models.Ticker, error)
@@ -96,6 +97,29 @@ func (ai *AI) UpdateOptimizeParams(isContinue bool) {
 		time.Sleep(5 * ai.Duration)
 		ai.UpdateOptimizeParams(isContinue)
 	}
+}
+
+func (ai *AI) GetIndicatorInfo() (indicator string, param1, param2, param3 float64) {
+	if ai.OptimizedTradeParams.EmaEnable {
+		indicator = "Ema"
+		param1 = float64(ai.OptimizedTradeParams.EmaPeriod1)
+		param2 = float64(ai.OptimizedTradeParams.EmaPeriod2)
+	} else if ai.OptimizedTradeParams.BbEnable {
+		indicator = "Bband"
+		param1 = float64(ai.OptimizedTradeParams.BbN)
+		param2 = float64(ai.OptimizedTradeParams.BbK)
+	} else if ai.OptimizedTradeParams.MacdEnable {
+		indicator = "Macd"
+		param1 = float64(ai.OptimizedTradeParams.MacdFastPeriod)
+		param2 = float64(ai.OptimizedTradeParams.MacdSlowPeriod)
+		param3 = float64(ai.OptimizedTradeParams.MacdSignalPeriod)
+	} else if ai.OptimizedTradeParams.RsiEnable {
+		indicator = "Rsi"
+		param1 = float64(ai.OptimizedTradeParams.RsiPeriod)
+		param2 = float64(ai.OptimizedTradeParams.RsiBuyThread)
+		param3 = float64(ai.OptimizedTradeParams.RsiSellThread)
+	}
+	return indicator, param1, param2, param3
 }
 
 func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderCompleted bool) {
@@ -336,8 +360,8 @@ func (ai *AI) GetAvailableBalance() (availableCurrency, availableCoin float64) {
 }
 
 func (ai *AI) AdjustSize(size float64) float64 {
-	fee := size * ApiFeePercent
-	size = size - fee
+	// fee := size * ApiFeePercent
+	// size = size - fee
 	return math.Floor(size*10000) / 10000
 }
 
@@ -419,6 +443,13 @@ func (ai *AI) WaitUntilOrderCompleteQuoine(orderID string, executeTime time.Time
 							strTradePrice := strconv.FormatFloat(tradedPrice, 'f', 4, 64)
 							slack.Notice("trade", "BUY process completed ! ==> " + strTradePrice)
 							log.Printf("status=buy orderID=%s order=%+v", orderID, order)
+							var indicator string
+							var param1, param2, param3 float64
+							indicator, param1, param2, param3 = ai.GetIndicatorInfo()
+							models.InsertBuyResult(executeTime, tradedPrice, order.Price, config.Config.StopLimitPercent,
+								param1, param2, param3, indicator, config.Config.Exchange, config.Config.ProductCode,
+								os.Getenv("TRADE_DURATION"), os.Getenv("REFERENCE_DURATION1"), os.Getenv("REFERENCE_DURATION2"),
+								config.Config.DataLimit, config.Config.NumRanking)
 						}
 						return couldBuy
 					}
@@ -430,6 +461,9 @@ func (ai *AI) WaitUntilOrderCompleteQuoine(orderID string, executeTime time.Time
 							strTradePrice := strconv.FormatFloat(tradedPrice, 'f', 4, 64)
 							slack.Notice("trade", "SELL process completed ! ==> " + strTradePrice)
 							log.Printf("status=sell orderID=%s order=%+v", orderID, order)
+							var balance float64
+							balance, _ = ai.GetAvailableBalance()
+							models.UpdateSellResult(executeTime, tradedPrice, balance, order.Price)
 						}
 						return couldSell
 					}

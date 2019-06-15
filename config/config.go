@@ -16,6 +16,8 @@ type ConfigList struct {
 	ProductCode string
 
 	TradeDuration time.Duration
+	RefDuration1  time.Duration
+	RefDuration2  time.Duration
 	Durations     map[string]time.Duration
 	DbName        string
 	SQLDriver     string
@@ -92,6 +94,8 @@ func init() {
 		ProductCode:      os.Getenv("PRODUCT_CODE"),
 		Durations:        durations,
 		TradeDuration:    durations[os.Getenv("TRADE_DURATION")],
+		RefDuration1:	  durations[os.Getenv("REFERENCE_DURATION1")],
+		RefDuration2:     durations[os.Getenv("REFERENCE_DURATION2")],
 		DbName:           os.Getenv("DATABASE_URL"),
 		SQLDriver:        os.Getenv("DATABASE_DRIVER"),
 		Port:             port,

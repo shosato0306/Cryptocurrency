@@ -7,6 +7,7 @@ import (
 )
 
 func TestCanBuy(t *testing.T) {
+	t.Skip()
 	s := GetSignalEventsByCount(1)
 	// signalEvent := &Signa
 	log.Printf("%+v", s)
