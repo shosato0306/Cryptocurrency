@@ -24,7 +24,7 @@ func InsertBuyResult(buyTime time.Time, buyPrice, coinPriceBuy, stopLimitPercent
 		product_code, exchange, stop_limit_percent, indicator,
 		param1, param2, param3,
 		data_limit, trade_duration, ref_duration1, ref_duration2, num_ranking)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`)
 	_, err = DB.Exec(cmd, buyTime, buyPrice, coinPriceBuy, productCode, exchange, stopLimitPercent,
 				indicator, param1, param2, param3, dataLimit, tradeDuration, refDuration1, refDuration2, numRanking)
 	if err != nil {
