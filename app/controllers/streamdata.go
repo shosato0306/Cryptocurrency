@@ -44,7 +44,7 @@ func StreamIngestionData() {
 			for ticker := range tickerChannel {
 				// log.Println(counter)
 				counter += 1 
-				if counter >= 60 {
+				if counter >= 180 {
 					for _, duration := range config.Config.Durations {
 						// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
 
