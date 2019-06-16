@@ -25,7 +25,8 @@ func StreamIngestionData() {
 					// 新規に Candle 情報が作成され、なおかつ設定したトレード期間に一致した場合は、
 					// インディケータのパラメータの最適化と売買判断を実行する。
 					if isCreated == true && duration == config.Config.TradeDuration {
-						ai.Trade()
+						// ai.Trade()
+						
 					}
 				}
 			}
@@ -34,6 +35,8 @@ func StreamIngestionData() {
 		var tickerChannel = make(chan *models.Ticker)
 		apiClient := quoine.New(config.Config.ApiKey, config.Config.ApiSecret)
 		var counter int
+		bought_in_same_candle :=  false
+		sold_in_same_candle := false
 		go apiClient.GetRealTimeProduct(config.Config.ProductCode, tickerChannel)
 		// is_ordered := false
 		// call_count := 0
@@ -45,13 +48,16 @@ func StreamIngestionData() {
 					for _, duration := range config.Config.Durations {
 						// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
 
-						_ = models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
-						// if isCreated == true && duration == config.Config.TradeDuration {
+						isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+						if isCreated == true && duration == config.Config.TradeDuration {
+							bought_in_same_candle = false
+							sold_in_same_candle = false
+						}
 						if duration == config.Config.TradeDuration {
 							// log.Println("### Trade() is called")
 							// is_during_buy := false
 							// is_ordered = ai.Trade()
-							ai.Trade()
+							bought_in_same_candle, sold_in_same_candle = ai.Trade(bought_in_same_candle, sold_in_same_candle)
 							// log.Println("ai.Trade()...")
 							// if call_count >= 5 && is_during_buy != false {
 							// 	ai.UpdateOptimizeParams(true)
