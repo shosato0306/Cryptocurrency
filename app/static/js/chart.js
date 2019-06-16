@@ -461,7 +461,6 @@ function send() {
     $.get("/api/candle/", params).done(function (data) {
         initConfigValues();
         aidata = data["ai"];
-        console.log(data);
         $("#description").text(JSON.stringify(aidata.OptimizedTradeParams));
         data = data["dfcandle"];
         var dataTable = new google.visualization.DataTable();
