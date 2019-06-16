@@ -33,24 +33,32 @@ func StreamIngestionData() {
 	} else if c.Exchange == "quoine" {
 		var tickerChannel = make(chan *models.Ticker)
 		apiClient := quoine.New(config.Config.ApiKey, config.Config.ApiSecret)
+		var counter int
 		go apiClient.GetRealTimeProduct(config.Config.ProductCode, tickerChannel)
 		// is_ordered := false
 		// call_count := 0
 		go func() {
 			for ticker := range tickerChannel {
-				for _, duration := range config.Config.Durations {
-					// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
-					_ = models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
-					// if isCreated == true && duration == config.Config.TradeDuration {
-					if duration == config.Config.TradeDuration {
-						// log.Println("### Trade() is called")
-						// is_during_buy := false
-						// is_ordered = ai.Trade()
-						ai.Trade()
-						// if call_count >= 5 && is_during_buy != false {
-						// 	ai.UpdateOptimizeParams(true)
-						// }
-					}			
+				// log.Println(counter)
+				counter += 1 
+				if counter >= 10 {
+					for _, duration := range config.Config.Durations {
+						// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+
+						_ = models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+						// if isCreated == true && duration == config.Config.TradeDuration {
+						if duration == config.Config.TradeDuration {
+							// log.Println("### Trade() is called")
+							// is_during_buy := false
+							// is_ordered = ai.Trade()
+							ai.Trade()
+							// log.Println("ai.Trade()...")
+							// if call_count >= 5 && is_during_buy != false {
+							// 	ai.UpdateOptimizeParams(true)
+							// }
+						}			
+					}
+					counter = 0
 				}
 			}
 		}()
