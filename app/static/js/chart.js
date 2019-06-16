@@ -9,7 +9,7 @@ var config = {
     },
     candlestick: {
         product_code: 'BTC_JPY',
-        duration: '1m',
+        duration: '5m',
         limit: 365,
         numViews: 5,
     },
