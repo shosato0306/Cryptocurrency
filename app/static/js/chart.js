@@ -715,11 +715,7 @@ function send() {
                 } else if (event.time == candle.time) {
                     datas.push(candle.high + 1);
                     datas.push(event.side);
-                    // config.events.first = config.events.values.shift();
                     config.events.first = config.events.values.shift();
-                    while (config.events.first.time == event.time){
-                        config.events.first = config.events.values.shift();
-                    }
                 } else {
                     datas.push(null);
                     datas.push(null);
