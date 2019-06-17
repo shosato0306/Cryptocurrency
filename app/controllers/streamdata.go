@@ -44,28 +44,31 @@ func StreamIngestionData() {
 			for ticker := range tickerChannel {
 				// log.Println(counter)
 				counter += 1 
-				if counter >= 180 {
-					for _, duration := range config.Config.Durations {
-						// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+				// if counter >= 180 {
+				for _, duration := range config.Config.Durations {
+					// isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
 
-						isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
-						if isCreated == true && duration == config.Config.TradeDuration {
-							bought_in_same_candle = false
-							sold_in_same_candle = false
-						}
-						if duration == config.Config.TradeDuration {
-							// log.Println("### Trade() is called")
-							// is_during_buy := false
-							// is_ordered = ai.Trade()
-							bought_in_same_candle, sold_in_same_candle = ai.Trade(bought_in_same_candle, sold_in_same_candle)
-							// log.Println("ai.Trade()...")
-							// if call_count >= 5 && is_during_buy != false {
-							// 	ai.UpdateOptimizeParams(true)
-							// }
-						}			
+					isCreated := models.CreateCandleWithDuration(*ticker, ticker.ProductCode, duration)
+					if isCreated == true && duration == config.Config.TradeDuration {
+						bought_in_same_candle = false
+						sold_in_same_candle = false
 					}
-					counter = 0
+					if duration == config.Config.TradeDuration {
+						// log.Println("### Trade() is called")
+						// is_during_buy := false
+						// is_ordered = ai.Trade()
+						if counter >= 180 {
+							bought_in_same_candle, sold_in_same_candle = ai.Trade(bought_in_same_candle, sold_in_same_candle)
+							counter = 0
+						}
+						// log.Println("ai.Trade()...")
+						// if call_count >= 5 && is_during_buy != false {
+						// 	ai.UpdateOptimizeParams(true)
+						// }
+					}			
 				}
+				// counter = 0
+				// }
 			}
 		}()
 	}
