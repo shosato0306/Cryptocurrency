@@ -718,7 +718,7 @@ function send() {
                     // config.events.first = config.events.values.shift();
                     do {
                         config.events.first = config.events.values.shift();
-                    } while (config.events.first == event.time);
+                    } while (config.events.first.time == event.time);
                 } else {
                     datas.push(null);
                     datas.push(null);
