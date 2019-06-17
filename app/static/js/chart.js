@@ -716,9 +716,10 @@ function send() {
                     datas.push(candle.high + 1);
                     datas.push(event.side);
                     // config.events.first = config.events.values.shift();
-                    do {
+                    config.events.first = config.events.values.shift();
+                    while (config.events.first.time == event.time){
                         config.events.first = config.events.values.shift();
-                    } while (config.events.first.time == event.time);
+                    }
                 } else {
                     datas.push(null);
                     datas.push(null);
