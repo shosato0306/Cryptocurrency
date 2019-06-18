@@ -712,10 +712,12 @@ function send() {
                 if (event == undefined) {
                     datas.push(null);
                     datas.push(null);
-                } else if (event.time == candle.time) {
+                // } else if (event.time == candle.time) {
+                } else if (floorDatetime(event.time) == floorDatetime(candle.time)) {
                     datas.push(candle.high + 1);
                     datas.push(event.side);
                     // config.events.first = config.events.values.shift();
+
                     do {
                         config.events.first = config.events.values.shift();
                         // firstEvent = config.events.first;
@@ -770,6 +772,14 @@ function send() {
 function changeDuration(s) {
     config.candlestick.duration = s;
     send();
+}
+
+function floorDatetime(date_time) {
+    var date = new Date(date_time);  
+    var interval = 10; // 丸めたい間隔（この場合60分刻み）
+    var coeff = 1000 * 60 * interval;
+    var rounded_date = new Date(Math.floor(date.getTime() / coeff) * coeff);
+    return rounded_date
 }
 
 setInterval(send, 1000 * 10)
