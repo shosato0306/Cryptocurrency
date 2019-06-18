@@ -58,7 +58,7 @@ func StreamIngestionData() {
 						// log.Println("### Trade() is called")
 						// is_during_buy := false
 						// is_ordered = ai.Trade()
-						if is_holding && counter >= 5 || counter >= 80 {
+						if is_holding && counter >= 3 || counter >= 40 {
 							bought_in_same_candle, sold_in_same_candle, is_holding = ai.Trade(bought_in_same_candle, sold_in_same_candle, is_holding)
 							counter = 0
 						} 
