@@ -713,7 +713,7 @@ function send() {
                     datas.push(null);
                     datas.push(null);
                 // } else if (event.time == candle.time) {
-                } else if (floorDatetime(event.time) == floorDatetime(candle.time)) {
+                } else if (floorDatetime(event.time).toString() == floorDatetime(candle.time).toString()) {
                     datas.push(candle.high + 1);
                     datas.push(event.side);
                     // config.events.first = config.events.values.shift();
