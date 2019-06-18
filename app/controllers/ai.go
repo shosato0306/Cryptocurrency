@@ -222,17 +222,17 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 // 新規に Candle 情報が作成され、なおかつ設定したトレード期間に一致した場合に、
 // インディケータのパラメータの最適化と売買判断を実行する。
 // streaming.go によって呼び出される
-func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle bool) (bool, bool) {
+func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool) (bool, bool, bool) {
 	isAcquire := ai.TradeSemaphore.TryAcquire(1)
 	if !isAcquire {
 		slack.Notice("notification", "Could not get trade lock")
 		log.Println("Could not get trade lock")
-		return bought_in_same_candle, sold_in_same_candle
+		return bought_in_same_candle, sold_in_same_candle, is_holding
 	}
 	defer ai.TradeSemaphore.Release(1)
 	params := ai.OptimizedTradeParams
 	if params == nil {
-		return bought_in_same_candle, sold_in_same_candle
+		return bought_in_same_candle, sold_in_same_candle, is_holding
 	}
 	df, _ := models.GetAllCandle(ai.ProductCode, ai.Duration, ai.PastPeriod)
 	lenCandles := len(df.Candles)
@@ -341,7 +341,8 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle bool) (bool, bool
 			ai.StopLimit = df.Candles[i].Close * ai.StopLimitPercent
 			bought_in_same_candle = true
 			sold_in_same_candle = false
-			return bought_in_same_candle, sold_in_same_candle
+			is_holding = true
+			return bought_in_same_candle, sold_in_same_candle, is_holding
 		}
 
 		if sellPoint > 0 || ai.StopLimit > df.Candles[i].Close {
@@ -357,10 +358,11 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle bool) (bool, bool
 			ai.UpdateOptimizeParams(true)
 			bought_in_same_candle = false
 			sold_in_same_candle = true
-			return bought_in_same_candle, sold_in_same_candle
+			is_holding = false
+			return bought_in_same_candle, sold_in_same_candle, is_holding
 		}
 	}
-	return bought_in_same_candle, sold_in_same_candle
+	return bought_in_same_candle, sold_in_same_candle, is_holding
 }
 
 func (ai *AI) GetAvailableBalance() (availableCurrency, availableCoin float64) {

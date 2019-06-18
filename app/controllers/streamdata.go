@@ -37,6 +37,7 @@ func StreamIngestionData() {
 		var counter int
 		bought_in_same_candle :=  false
 		sold_in_same_candle := false
+		is_holding := false
 		go apiClient.GetRealTimeProduct(config.Config.ProductCode, tickerChannel)
 		// is_ordered := false
 		// call_count := 0
@@ -57,10 +58,10 @@ func StreamIngestionData() {
 						// log.Println("### Trade() is called")
 						// is_during_buy := false
 						// is_ordered = ai.Trade()
-						if counter >= 100 {
-							bought_in_same_candle, sold_in_same_candle = ai.Trade(bought_in_same_candle, sold_in_same_candle)
+						if is_holding && counter >= 5 || counter >= 80 {
+							bought_in_same_candle, sold_in_same_candle, is_holding = ai.Trade(bought_in_same_candle, sold_in_same_candle, is_holding)
 							counter = 0
-						}
+						} 
 						// log.Println("ai.Trade()...")
 						// if call_count >= 5 && is_during_buy != false {
 						// 	ai.UpdateOptimizeParams(true)
