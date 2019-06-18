@@ -722,7 +722,8 @@ function send() {
                         config.events.first = config.events.values.shift();
                         // firstEvent = config.events.first;
                     // } while (config.events.first.time == event.time);
-                    } while (config.events.first != undefined && config.events.first.time == event.time);
+                    // } while (config.events.first != undefined && config.events.first.time == event.time);
+                    } while (config.events.first != undefined && floorDatetime(config.events.first.time).toString() == floorDatetime(event.time).toString());
                 } else {
                     datas.push(null);
                     datas.push(null);
