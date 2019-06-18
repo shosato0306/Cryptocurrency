@@ -718,9 +718,9 @@ function send() {
                     // config.events.first = config.events.values.shift();
                     do {
                         config.events.first = config.events.values.shift();
-                        firstEvent = config.events.first;
+                        // firstEvent = config.events.first;
                     // } while (config.events.first.time == event.time);
-                    } while (firstEvent.time == event.time);
+                    } while (config.events.first != undefined && config.events.first.time == event.time);
                 } else {
                     datas.push(null);
                     datas.push(null);
