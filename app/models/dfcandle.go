@@ -504,6 +504,8 @@ type Ranking struct {
 
 func (df *DataFrameCandle) OptimizeParams() *TradeParams {
 	emaPerformance, emaPeriod1, emaPeriod2 := df.OptimizeEma()
+	emaPerformance = 0
+
 	bbPerformance, bbN, bbK := df.OptimizeBb()
 	macdPerformance, macdFastPeriod, macdSlowPeriod, macdSignalPeriod := df.OptimizeMacd()
 	ichimokuPerforamcne := df.OptimizeIchimoku()
