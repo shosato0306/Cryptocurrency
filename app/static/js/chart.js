@@ -777,7 +777,7 @@ function changeDuration(s) {
 
 function floorDatetime(date_time) {
     var date = new Date(date_time);  
-    var interval = 10; // 丸めたい間隔（この場合60分刻み）
+    var interval = 30;
     var coeff = 1000 * 60 * interval;
     var rounded_date = new Date(Math.floor(date.getTime() / coeff) * coeff);
     return rounded_date
