@@ -713,7 +713,7 @@ function send() {
                     datas.push(null);
                     datas.push(null);
                 // } else if (event.time == candle.time) {
-                } else if (floorDatetime(event.time, aidata.duration).toString() == floorDatetime(candle.time, aidata.duration).toString()) {
+                } else if (floorDatetime(event.time, aidata.Duration).toString() == floorDatetime(candle.time, aidata.Duration).toString()) {
                     datas.push(candle.high + 1);
                     datas.push(event.side);
                     // config.events.first = config.events.values.shift();
@@ -723,7 +723,7 @@ function send() {
                         // firstEvent = config.events.first;
                     // } while (config.events.first.time == event.time);
                     // } while (config.events.first != undefined && config.events.first.time == event.time);
-                    } while (config.events.first != undefined && floorDatetime(config.events.first.time, aidata.duration).toString() == floorDatetime(event.time, aidata.duration).toString());
+                    } while (config.events.first != undefined && floorDatetime(config.events.first.time, aidata.Duration).toString() == floorDatetime(event.time, aidata.Duration).toString());
                 } else {
                     datas.push(null);
                     datas.push(null);
