@@ -713,7 +713,7 @@ function send() {
                     datas.push(null);
                     datas.push(null);
                 // } else if (event.time == candle.time) {
-                } else if (floorDatetime(event.time).toString() == floorDatetime(candle.time).toString()) {
+                } else if (floorDatetime(event.time, aidata.duration).toString() == floorDatetime(candle.time, aidata.duration).toString()) {
                     datas.push(candle.high + 1);
                     datas.push(event.side);
                     // config.events.first = config.events.values.shift();
@@ -723,7 +723,7 @@ function send() {
                         // firstEvent = config.events.first;
                     // } while (config.events.first.time == event.time);
                     // } while (config.events.first != undefined && config.events.first.time == event.time);
-                    } while (config.events.first != undefined && floorDatetime(config.events.first.time).toString() == floorDatetime(event.time).toString());
+                    } while (config.events.first != undefined && floorDatetime(config.events.first.time, aidata.duration).toString() == floorDatetime(event.time, aidata.duration).toString());
                 } else {
                     datas.push(null);
                     datas.push(null);
@@ -775,9 +775,9 @@ function changeDuration(s) {
     send();
 }
 
-function floorDatetime(date_time) {
+function floorDatetime(date_time, duration) {
     var date = new Date(date_time);  
-    var interval = 30;
+    var interval = duration / 60000000000;
     var coeff = 1000 * 60 * interval;
     var rounded_date = new Date(Math.floor(date.getTime() / coeff) * coeff);
     return rounded_date

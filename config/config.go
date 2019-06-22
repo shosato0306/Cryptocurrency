@@ -29,6 +29,7 @@ type ConfigList struct {
 	StopLimitPercent float64
 	NumRanking       int
 	Exchange         string
+	BuyInterval    int
 
 	SlackWebhookURL string
 }
@@ -84,6 +85,7 @@ func init() {
 	backTest, _ := strconv.ParseBool(os.Getenv("BACK_TEST"))
 	usePercent, _ := strconv.ParseFloat(os.Getenv("USE_PERCENT"), 64)
 	dataLimit, _ := strconv.Atoi(os.Getenv("DATA_LIMIT"))
+	buyInterval, _ := strconv.Atoi(os.Getenv("BUY_INTERVAL"))
 	stopLimitPercent, _ := strconv.ParseFloat(os.Getenv("STOP_LIMIT_PERCENT"), 64)
 	numRanking, _ := strconv.Atoi(os.Getenv("NUM_RANKING"))
 
@@ -101,6 +103,7 @@ func init() {
 		Port:             port,
 		BackTest:         backTest,
 		UsePercent:       usePercent,
+		BuyInterval:      buyInterval,
 		DataLimit:        dataLimit,
 		StopLimitPercent: stopLimitPercent,
 		NumRanking:       numRanking,

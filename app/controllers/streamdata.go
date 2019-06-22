@@ -58,7 +58,7 @@ func StreamIngestionData() {
 						// log.Println("### Trade() is called")
 						// is_during_buy := false
 						// is_ordered = ai.Trade()
-						if is_holding && counter >= 3 || counter >= 40 {
+						if is_holding && counter >= 3 || counter >= config.Config.BuyInterval {
 							bought_in_same_candle, sold_in_same_candle, is_holding = ai.Trade(bought_in_same_candle, sold_in_same_candle, is_holding)
 							counter = 0
 						} 
@@ -86,8 +86,8 @@ func CleanUpRecord() {
 					log.Fatal(err)
 				}
 			}
-			log.Println("Deletion old records is complete. Wait 30 minutes. ...")
-			time.Sleep(time.Minute * 30)
+			log.Println("Deletion old records is complete. Wait 100 minutes. ...")
+			time.Sleep(time.Minute * 100)
 		}
 	}()
 }
