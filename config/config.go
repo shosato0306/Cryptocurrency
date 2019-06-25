@@ -90,12 +90,13 @@ func init() {
 	buyInterval, _ := strconv.Atoi(os.Getenv("BUY_INTERVAL"))
 	stopLimitPercent, _ := strconv.ParseFloat(os.Getenv("STOP_LIMIT_PERCENT"), 64)
 	numRanking, _ := strconv.Atoi(os.Getenv("NUM_RANKING"))
-	breakEvenPercent, _ := strconv.ParseFloat(os.Getenv("BREAK_EVEN_PERCENT"), 64)
+	breakEvenPercent, err := strconv.ParseFloat(os.Getenv("BREAK_EVEN_PERCENT"), 64)
 	breakEvenFlagPercent, _ := strconv.ParseFloat(os.Getenv("BREAK_EVEN_FLAG_PERCENT"), 64)
 
 	log.Println("!!!")
 	log.Println(os.Getenv("BREAK_EVEN_PERCENT"))
 	log.Println(breakEvenPercent)
+	log.Println(err)
 
 	Config = ConfigList{
 		ApiKey:           apiKey,
