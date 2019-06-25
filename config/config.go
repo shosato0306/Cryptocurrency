@@ -93,6 +93,10 @@ func init() {
 	breakEvenPercent, _ := strconv.ParseFloat(os.Getenv("BREAK_EVEN_PERCENT"), 64)
 	breakEvenFlagPercent, _ := strconv.ParseFloat(os.Getenv("BREAK_EVEN_FLAG_PERCENT"), 64)
 
+	log.Println("!!!")
+	log.Println(os.Getenv("BREAK_EVEN_PERCENT"))
+	log.Println(breakEvenPercent)
+
 	Config = ConfigList{
 		ApiKey:           apiKey,
 		ApiSecret:        apiSecret,
