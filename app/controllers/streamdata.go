@@ -37,6 +37,8 @@ func StreamIngestionData() {
 			}
 		}()
 	} else if c.Exchange == "quoine" {
+		log.Println("#######", config.Config.BreakEvenPercent)
+		log.Println("#######", config.Config.BreakEvenFlagPercent)
 		var tickerChannel = make(chan *models.Ticker)
 		apiClient := quoine.New(config.Config.ApiKey, config.Config.ApiSecret)
 		var counter int
