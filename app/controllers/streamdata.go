@@ -37,8 +37,8 @@ func StreamIngestionData() {
 			}
 		}()
 	} else if c.Exchange == "quoine" {
-		log.Println("#######", config.Config.BreakEvenPercent)
-		log.Println("#######", config.Config.BreakEvenFlagPercent)
+		// log.Println("#######", config.Config.BreakEvenPercent)
+		// log.Println("#######", config.Config.BreakEvenFlagPercent)
 		var tickerChannel = make(chan *models.Ticker)
 		apiClient := quoine.New(config.Config.ApiKey, config.Config.ApiSecret)
 		var counter int
@@ -69,7 +69,7 @@ func StreamIngestionData() {
 						// log.Println("### Trade() is called")
 						// is_during_buy := false
 						// is_ordered = ai.Trade()
-						if BreakEvenFlagPrice != 0.0 && ticker.BestAsk > BreakEvenFlagPrice{
+						if !ProfitConfirmationFlag && BreakEvenFlagPrice != 0.0 && ticker.BestAsk > BreakEvenFlagPrice{
 							ProfitConfirmationFlag = true
 							log.Println("ProfitConfirmationFlag turns True.")
 							slack.Notice("trade", "ProfitConfirmationFlag turns True.")
