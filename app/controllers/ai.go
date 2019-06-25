@@ -342,14 +342,27 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			bought_in_same_candle = true
 			sold_in_same_candle = false
 			is_holding = true
+			BreakEvenPrice = df.Candles[i].Close * config.Config.BreakEvenPercent
+			BreakEvenFlagPrice = df.Candles[i].Close * config.Config.BreakEvenFlagPercent
+			log.Println("#### BreakEvenPrice is ", BreakEvenPrice)
+			log.Println("#### BreakEvenFlagPrice is ", BreakEvenFlagPrice)
+			slack.Notice("trade", "BuyPrice : "+ strconv.FormatFloat(df.Candles[i].Close, 'f', 4, 64))			
+			slack.Notice("trade", "BreakEvenPrice : "+ strconv.FormatFloat(BreakEvenPrice, 'f', 4, 64) + ", BreakEvenFlagPrice :" + strconv.FormatFloat(BreakEvenFlagPrice, 'f', 4, 64))
+			// ProfitConfirmationFlag = false
+			// SellToSecureProfit = false
 			return bought_in_same_candle, sold_in_same_candle, is_holding
 		}
 
-		if sellPoint > 0 || ai.StopLimit > df.Candles[i].Close {
+		if sellPoint > 0 || ai.StopLimit > df.Candles[i].Close || SellToSecureProfit {
 			_, isOrderCompleted := ai.Sell(df.Candles[i])
 			if !isOrderCompleted {
 				continue
 			}
+			if SellToSecureProfit{
+				log.Println("SellToSecureProfit is excecuted !!!")
+				slack.Notice("trade", "SellToSecureProfit is excecuted")
+			}
+
 			if ai.StopLimit > df.Candles[i].Close {
 				log.Println("### Stop Limit !!!")
 				slack.Notice("trade", "Stop Limit !!!")
@@ -359,6 +372,10 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			bought_in_same_candle = false
 			sold_in_same_candle = true
 			is_holding = false
+			BreakEvenPrice = 0.0
+			BreakEvenFlagPrice = 0.0
+			ProfitConfirmationFlag = false
+			SellToSecureProfit = false
 			return bought_in_same_candle, sold_in_same_candle, is_holding
 		}
 	}

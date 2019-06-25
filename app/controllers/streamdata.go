@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+var BreakEvenPrice = 0.0
+var BreakEvenFlagPrice = 0.0
+var ProfitConfirmationFlag = false
+var SellToSecureProfit = false
+
 func StreamIngestionData() {
 	c := config.Config
 	ai := NewAI(c.ProductCode, c.TradeDuration, c.DataLimit, c.UsePercent, c.StopLimitPercent, c.BackTest)
@@ -38,6 +43,10 @@ func StreamIngestionData() {
 		bought_in_same_candle :=  false
 		sold_in_same_candle := false
 		is_holding := false
+		// BreakEvenPrice := 0.0
+		// BreakEvenFlagPrice := 0.0
+		// ProfitConfirmationFlag := false
+		// SellToSecureProfit := false
 		go apiClient.GetRealTimeProduct(config.Config.ProductCode, tickerChannel)
 		// is_ordered := false
 		// call_count := 0
@@ -58,10 +67,22 @@ func StreamIngestionData() {
 						// log.Println("### Trade() is called")
 						// is_during_buy := false
 						// is_ordered = ai.Trade()
-						if is_holding && counter >= 3 || counter >= config.Config.BuyInterval {
+						if BreakEvenFlagPrice != 0.0 && ticker.BestAsk > BreakEvenFlagPrice{
+							ProfitConfirmationFlag = true
+							log.Println("ProfitConfirmationFlag turns True.")
+							slack.Notice("trade", "ProfitConfirmationFlag turns True.")
+						}
+
+						if ProfitConfirmationFlag && ticker.BestAsk < BreakEvenPrice {
+							SellToSecureProfit = true
+							log.Println("SellToSecureProfit turns True.")
+							slack.Notice("trade", "SellToSecureProfit turns True.")
+						}
+
+						if is_holding && counter >= 3 || counter >= config.Config.BuyInterval || SellToSecureProfit {
 							bought_in_same_candle, sold_in_same_candle, is_holding = ai.Trade(bought_in_same_candle, sold_in_same_candle, is_holding)
 							counter = 0
-						} 
+						}
 						// log.Println("ai.Trade()...")
 						// if call_count >= 5 && is_during_buy != false {
 						// 	ai.UpdateOptimizeParams(true)
