@@ -333,6 +333,9 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			}
 		}
 
+		log.Println("buyPoint is ", buyPoint)
+		log.Println("sellPoint is ", sellPoint)
+
 		if buyPoint > 0 {
 			_, isOrderCompleted := ai.Buy(df.Candles[i])
 			if !isOrderCompleted {
