@@ -129,10 +129,12 @@ func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderC
 	}
 
 	if ai.StartTrade.After(candle.Time) {
+		log.Println("ai.StartTrade.After is True in Buy")
 		return
 	}
 
 	if !ai.SignalEvents.CanBuy(candle.Time) {
+		log.Println("ai.SignalEvents.CanBuy is False")
 		return
 	}
 
@@ -180,10 +182,12 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 	}
 
 	if ai.StartTrade.After(candle.Time) {
+		log.Println("ai.StartTrade.After is True in Sell")
 		return
 	}
 
 	if !ai.SignalEvents.CanSell(candle.Time) {
+		log.Println("ai.SignalEvents.CanSell is False")
 		return
 	}
 
@@ -333,8 +337,6 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			}
 		}
 
-		log.Println("buyPoint is ", buyPoint)
-		log.Println("sellPoint is ", sellPoint)
 
 		if buyPoint > 0 {
 			_, isOrderCompleted := ai.Buy(df.Candles[i])
