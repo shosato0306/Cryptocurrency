@@ -30,6 +30,7 @@ type ConfigList struct {
 	NumRanking       int
 	Exchange         string
 	BuyInterval    int
+	SellInterval    int
 	BreakEvenPercent  float64
 	BreakEvenFlagPercent  float64
 
@@ -88,6 +89,7 @@ func init() {
 	usePercent, _ := strconv.ParseFloat(os.Getenv("USE_PERCENT"), 64)
 	dataLimit, _ := strconv.Atoi(os.Getenv("DATA_LIMIT"))
 	buyInterval, _ := strconv.Atoi(os.Getenv("BUY_INTERVAL"))
+	sellInterval, _ := strconv.Atoi(os.Getenv("SELL_INTERVAL"))
 	stopLimitPercent, _ := strconv.ParseFloat(os.Getenv("STOP_LIMIT_PERCENT"), 64)
 	numRanking, _ := strconv.Atoi(os.Getenv("NUM_RANKING"))
 	breakEvenPercent, _ := strconv.ParseFloat(os.Getenv("BREAK_EVEN_PERCENT"), 64)
@@ -113,6 +115,7 @@ func init() {
 		BackTest:         backTest,
 		UsePercent:       usePercent,
 		BuyInterval:      buyInterval,
+		SellInterval:      sellInterval,
 		BreakEvenPercent: breakEvenPercent,
 		BreakEvenFlagPercent: breakEvenFlagPercent,
 		DataLimit:        dataLimit,

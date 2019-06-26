@@ -45,6 +45,7 @@ func StreamIngestionData() {
 		bought_in_same_candle :=  false
 		sold_in_same_candle := false
 		is_holding := false
+		log.Println(config.Config.SellInterval)
 		// BreakEvenPrice := 0.0
 		// BreakEvenFlagPrice := 0.0
 		// ProfitConfirmationFlag := false
@@ -81,7 +82,7 @@ func StreamIngestionData() {
 							slack.Notice("trade", "SellToSecureProfit turns True.")
 						}
 
-						if is_holding && counter >= 3 || counter >= config.Config.BuyInterval || SellToSecureProfit {
+						if is_holding && counter >= config.Config.SellInterval || counter >= config.Config.BuyInterval || SellToSecureProfit {
 							bought_in_same_candle, sold_in_same_candle, is_holding = ai.Trade(bought_in_same_candle, sold_in_same_candle, is_holding)
 							counter = 0
 						}
