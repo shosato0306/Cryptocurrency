@@ -344,6 +344,8 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			is_holding = true
 			BreakEvenPrice = df.Candles[i].Close * config.Config.BreakEvenPercent
 			BreakEvenFlagPrice = df.Candles[i].Close * config.Config.BreakEvenFlagPercent
+			StreamSellInterval = config.Config.SellInterval
+			log.Println("#### StreamSellInterval is ", StreamSellInterval)
 			log.Println("#### df.Candles[i].Close is ", df.Candles[i].Close)
 			log.Println("#### config.Config.BreakEvenPercent is ", config.Config.BreakEvenPercent)
 			log.Println("#### config.Config.BreakEvenFlagPercent is ", config.Config.BreakEvenFlagPercent)

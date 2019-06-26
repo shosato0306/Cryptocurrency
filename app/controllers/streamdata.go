@@ -14,6 +14,7 @@ var BreakEvenPrice = 0.0
 var BreakEvenFlagPrice = 0.0
 var ProfitConfirmationFlag = false
 var SellToSecureProfit = false
+var StreamSellInterval = config.Config.SellInterval
 
 func StreamIngestionData() {
 	c := config.Config
@@ -72,6 +73,7 @@ func StreamIngestionData() {
 						// is_ordered = ai.Trade()
 						if !ProfitConfirmationFlag && BreakEvenFlagPrice != 0.0 && ticker.BestAsk > BreakEvenFlagPrice{
 							ProfitConfirmationFlag = true
+							StreamSellInterval = 2
 							log.Println("ProfitConfirmationFlag turns True.")
 							slack.Notice("trade", "ProfitConfirmationFlag turns True.")
 						}
@@ -82,7 +84,7 @@ func StreamIngestionData() {
 							slack.Notice("trade", "SellToSecureProfit turns True.")
 						}
 
-						if is_holding && counter >= config.Config.SellInterval || counter >= config.Config.BuyInterval || SellToSecureProfit {
+						if is_holding && counter >= StreamSellInterval || counter >= config.Config.BuyInterval || SellToSecureProfit {
 							bought_in_same_candle, sold_in_same_candle, is_holding = ai.Trade(bought_in_same_candle, sold_in_same_candle, is_holding)
 							counter = 0
 						}
