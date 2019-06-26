@@ -85,6 +85,7 @@ func StreamIngestionData() {
 						}
 
 						if is_holding && counter >= StreamSellInterval || counter >= config.Config.BuyInterval || SellToSecureProfit {
+							log.Println("Trade()...")
 							bought_in_same_candle, sold_in_same_candle, is_holding = ai.Trade(bought_in_same_candle, sold_in_same_candle, is_holding)
 							counter = 0
 						}
