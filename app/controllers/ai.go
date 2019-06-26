@@ -129,7 +129,7 @@ func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderC
 	}
 
 	if ai.StartTrade.After(candle.Time) {
-		log.Println("ai.StartTrade.After is True in Buy")
+		// log.Println("ai.StartTrade.After is True in Buy")
 		return
 	}
 
@@ -182,7 +182,7 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 	}
 
 	if ai.StartTrade.After(candle.Time) {
-		log.Println("ai.StartTrade.After is True in Sell")
+		// log.Println("ai.StartTrade.After is True in Sell")
 		return
 	}
 
