@@ -249,7 +249,7 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 		log.Println("OptimizedTradeParams is nil.")
 		return bought_in_same_candle, sold_in_same_candle, is_holding
 	}
-	df, _ := models.GetAllCandle(ai.ProductCode, ai.Duration, 100)
+	df, _ := models.GetAllCandle(ai.ProductCode, ai.Duration, ai.PastPeriod)
 	// df, _ := models.GetAllCandle(ai.ProductCode, ai.Duration, ai.PastPeriod)
 	lenCandles := len(df.Candles)
 
