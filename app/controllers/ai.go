@@ -138,6 +138,7 @@ func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderC
 		return
 	}
 
+	log.Println("CanBuy is True.")
 	availableCurrency, _ := ai.GetAvailableBalance()
 	useCurrency := availableCurrency * ai.UsePercent
 	ticker, err := ai.API.GetTicker(ai.ProductCode)
@@ -191,6 +192,7 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 		return
 	}
 
+	log.Println("CanSell is True.")
 	_, availableCoin := ai.GetAvailableBalance()
 	size := ai.AdjustSize(availableCoin)
 
@@ -472,13 +474,17 @@ func (ai *AI) WaitUntilOrderCompleteQuoine(orderID string, executeTime time.Time
 		for {
 			select {
 			case <-expire:
+				slack.Notice("trade", "Expire.")
 				return false
 			case <-interval:
 				listOrders, err := ai.API.ListOrder(params)
 				if err != nil {
+					log.Println(err)
+					slack.Notice("trade", "Get List Order failed.")
 					return false
 				}
 				if len(listOrders) == 0 {
+					slack.Notice("trade", "len(listOrders) == 0 ")
 					return false
 				}
 				order := listOrders[0]
