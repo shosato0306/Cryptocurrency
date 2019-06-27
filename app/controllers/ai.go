@@ -134,7 +134,7 @@ func (ai *AI) Buy(candle models.Candle) (childOrderAcceptanceID string, isOrderC
 	}
 
 	if !ai.SignalEvents.CanBuy(candle.Time) {
-		log.Println("ai.SignalEvents.CanBuy is False")
+		// log.Println("ai.SignalEvents.CanBuy is False")
 		return
 	}
 
@@ -187,7 +187,7 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 	}
 
 	if !ai.SignalEvents.CanSell(candle.Time) {
-		log.Println("ai.SignalEvents.CanSell is False")
+		// log.Println("ai.SignalEvents.CanSell is False")
 		return
 	}
 
