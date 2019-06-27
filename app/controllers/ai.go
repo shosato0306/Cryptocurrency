@@ -349,9 +349,11 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 		}
 
 		if sellPoint > 0 || ai.StopLimit > df.Candles[i].Close || SellToSecureProfit {
-			_, isOrderCompleted := ai.Sell(df.Candles[i])
-			if !isOrderCompleted {
-				continue
+			if ai.StopLimit <= df.Candles[i].Close && !SellToSecureProfit {
+				_, isOrderCompleted := ai.Sell(df.Candles[i])
+				if !isOrderCompleted {
+					continue
+				}
 			}
 			if SellToSecureProfit{
 				log.Println("SellToSecureProfit is excecuted !!!")
