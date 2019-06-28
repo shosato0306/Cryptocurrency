@@ -201,6 +201,9 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 			return
 		}
 	}
+	if !SellToSecureProfit {
+		log.Println("SellToSecureProfit is true")
+	}
 
 	log.Println("CanSell is True. ")
 	_, availableCoin := ai.GetAvailableBalance()
