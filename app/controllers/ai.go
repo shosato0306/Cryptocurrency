@@ -182,22 +182,24 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 		return "", couldSell
 	}
 
-	if ai.StartTrade.After(candle.Time) {
-		if SellToSecureProfit {
-			slack.Notice("notification", "ai.StartTrade.After is True in Sell")
-			log.Println("ai.StartTrade.After is True in Sell")
+	if !SellToSecureProfit {
+		if ai.StartTrade.After(candle.Time) {
+			if SellToSecureProfit {
+				slack.Notice("notification", "ai.StartTrade.After is True in Sell")
+				log.Println("ai.StartTrade.After is True in Sell")
+			}
+			// log.Println("ai.StartTrade.After is True in Sell")
+			return
 		}
-		// log.Println("ai.StartTrade.After is True in Sell")
-		return
-	}
 
-	if !ai.SignalEvents.CanSell(candle.Time) {
-		if SellToSecureProfit {
-			slack.Notice("notification", "ai.SignalEvents.CanSell is False")
-			log.Println("ai.SignalEvents.CanSell is False")
+		if !ai.SignalEvents.CanSell(candle.Time) {
+			if SellToSecureProfit {
+				slack.Notice("notification", "ai.SignalEvents.CanSell is False")
+				log.Println("ai.SignalEvents.CanSell is False")
+			}
+			// log.Println("ai.SignalEvents.CanSell is False")
+			return
 		}
-		// log.Println("ai.SignalEvents.CanSell is False")
-		return
 	}
 
 	log.Println("CanSell is True.")

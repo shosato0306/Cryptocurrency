@@ -106,7 +106,7 @@ func (s *SignalEvents) CanBuy(time time.Time) bool {
 
 	lastSignal := s.Signals[lenSignals-1]
 	// if lastSignal.Side == "SELL" && lastSignal.Time.Before(time) {
-	if lastSignal.Side == "SELL" && ((lastSignal.Time.Before(time) || lastSignal.Time.Equal(time))) {
+	if lastSignal.Side == "SELL" && (lastSignal.Time.Before(time) || lastSignal.Time.Equal(time)) {
 		return true
 	}
 	return false
@@ -120,7 +120,7 @@ func (s *SignalEvents) CanSell(time time.Time) bool {
 
 	lastSignal := s.Signals[lenSignals-1]
 	// if lastSignal.Side == "BUY" && lastSignal.Time.Before(time) {
-	if lastSignal.Side == "BUY" && ((lastSignal.Time.Before(time) || lastSignal.Time.Equal(time))) {
+	if lastSignal.Side == "BUY" && (lastSignal.Time.Before(time) || lastSignal.Time.Equal(time)) {
 		return true
 	}
 	return false
