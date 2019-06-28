@@ -351,6 +351,31 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			}
 		}
 
+		if buyPoint > 0 {
+			_, isOrderCompleted := ai.Buy(df.Candles[i])
+			if !isOrderCompleted {
+				continue
+			}
+			ai.StopLimit = df.Candles[i].Close * ai.StopLimitPercent
+			bought_in_same_candle = true
+			sold_in_same_candle = false
+			is_holding = true
+			BreakEvenPrice = df.Candles[i].Close * config.Config.BreakEvenPercent
+			BreakEvenFlagPrice = df.Candles[i].Close * config.Config.BreakEvenFlagPercent
+			StreamSellInterval = config.Config.SellInterval
+			log.Println("#### StreamSellInterval is ", StreamSellInterval)
+			log.Println("#### df.Candles[i].Close is ", df.Candles[i].Close)
+			log.Println("#### config.Config.BreakEvenPercent is ", config.Config.BreakEvenPercent)
+			log.Println("#### config.Config.BreakEvenFlagPercent is ", config.Config.BreakEvenFlagPercent)
+			log.Println("#### BreakEvenPrice is ", BreakEvenPrice)
+			log.Println("#### BreakEvenFlagPrice is ", BreakEvenFlagPrice)
+			slack.Notice("trade", "BuyPrice : "+ strconv.FormatFloat(df.Candles[i].Close, 'f', 4, 64))			
+			slack.Notice("trade", "BreakEvenPrice : "+ strconv.FormatFloat(BreakEvenPrice, 'f', 4, 64) + ", BreakEvenFlagPrice :" + strconv.FormatFloat(BreakEvenFlagPrice, 'f', 4, 64))
+			// ProfitConfirmationFlag = false
+			// SellToSecureProfit = false
+			return bought_in_same_candle, sold_in_same_candle, is_holding
+		}
+
 		if sellPoint > 0 || ai.StopLimit > df.Candles[i].Close || SellToSecureProfit {
 			_, isOrderCompleted := ai.Sell(df.Candles[i])
 			if !isOrderCompleted {
@@ -375,31 +400,6 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			BreakEvenFlagPrice = 0.0
 			ProfitConfirmationFlag = false
 			SellToSecureProfit = false
-			return bought_in_same_candle, sold_in_same_candle, is_holding
-		}
-
-		if buyPoint > 0 {
-			_, isOrderCompleted := ai.Buy(df.Candles[i])
-			if !isOrderCompleted {
-				continue
-			}
-			ai.StopLimit = df.Candles[i].Close * ai.StopLimitPercent
-			bought_in_same_candle = true
-			sold_in_same_candle = false
-			is_holding = true
-			BreakEvenPrice = df.Candles[i].Close * config.Config.BreakEvenPercent
-			BreakEvenFlagPrice = df.Candles[i].Close * config.Config.BreakEvenFlagPercent
-			StreamSellInterval = config.Config.SellInterval
-			log.Println("#### StreamSellInterval is ", StreamSellInterval)
-			log.Println("#### df.Candles[i].Close is ", df.Candles[i].Close)
-			log.Println("#### config.Config.BreakEvenPercent is ", config.Config.BreakEvenPercent)
-			log.Println("#### config.Config.BreakEvenFlagPercent is ", config.Config.BreakEvenFlagPercent)
-			log.Println("#### BreakEvenPrice is ", BreakEvenPrice)
-			log.Println("#### BreakEvenFlagPrice is ", BreakEvenFlagPrice)
-			slack.Notice("trade", "BuyPrice : "+ strconv.FormatFloat(df.Candles[i].Close, 'f', 4, 64))			
-			slack.Notice("trade", "BreakEvenPrice : "+ strconv.FormatFloat(BreakEvenPrice, 'f', 4, 64) + ", BreakEvenFlagPrice :" + strconv.FormatFloat(BreakEvenFlagPrice, 'f', 4, 64))
-			// ProfitConfirmationFlag = false
-			// SellToSecureProfit = false
 			return bought_in_same_candle, sold_in_same_candle, is_holding
 		}
 
