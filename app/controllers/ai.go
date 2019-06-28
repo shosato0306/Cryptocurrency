@@ -202,7 +202,7 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 		}
 	}
 
-	log.Println("CanSell is True.")
+	log.Println("CanSell is True. ")
 	_, availableCoin := ai.GetAvailableBalance()
 	size := ai.AdjustSize(availableCoin)
 
