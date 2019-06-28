@@ -183,25 +183,25 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 	}
 
 	if ai.StartTrade.After(candle.Time) {
-		if SellToSecureProfit {
-			slack.Notice("notification", "ai.StartTrade.After is True in Sell")
-			log.Println("ai.StartTrade.After is True in Sell")
-		}
+		// if SellToSecureProfit {
+		// 	slack.Notice("notification", "ai.StartTrade.After is True in Sell")
+		// 	log.Println("ai.StartTrade.After is True in Sell")
+		// }
 		// log.Println("ai.StartTrade.After is True in Sell")
 		return
 	}
 
 	if !ai.SignalEvents.CanSell(candle.Time) {
-		if SellToSecureProfit {
-			slack.Notice("notification", "ai.SignalEvents.CanSell is False")
-			log.Println("ai.SignalEvents.CanSell is False")
-		}
+		// if SellToSecureProfit {
+		// 	slack.Notice("notification", "ai.SignalEvents.CanSell is False")
+		// 	log.Println("ai.SignalEvents.CanSell is False")
+		// }
 		// log.Println("ai.SignalEvents.CanSell is False")
 		return
 	}
-	if !SellToSecureProfit {
-		log.Println("SellToSecureProfit is true")
-	}
+	// if !SellToSecureProfit {
+	// 	log.Println("SellToSecureProfit is true")
+	// }
 
 	log.Println("CanSell is True. ")
 	_, availableCoin := ai.GetAvailableBalance()
@@ -239,7 +239,7 @@ func (ai *AI) Sell(candle models.Candle) (childOrderAcceptanceID string, isOrder
 // 新規に Candle 情報が作成され、なおかつ設定したトレード期間に一致した場合に、
 // インディケータのパラメータの最適化と売買判断を実行する。
 // streaming.go によって呼び出される
-func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool) (bool, bool, bool) {
+func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding, sellToSecureProfit bool) (bool, bool, bool) {
 	isAcquire := ai.TradeSemaphore.TryAcquire(1)
 	if !isAcquire {
 		slack.Notice("notification", "Could not get trade lock")
@@ -377,13 +377,13 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			return bought_in_same_candle, sold_in_same_candle, is_holding
 		}
 
-		if sellPoint > 0 || ai.StopLimit > df.Candles[i].Close || SellToSecureProfit {
+		if sellPoint > 0 || ai.StopLimit > df.Candles[i].Close || sellToSecureProfit {
 			_, isOrderCompleted := ai.Sell(df.Candles[i])
 			if !isOrderCompleted {
 				continue
 				}
 			
-			if SellToSecureProfit{
+			if sellToSecureProfit{
 				log.Println("SellToSecureProfit is excecuted !!!")
 				slack.Notice("trade", "SellToSecureProfit is excecuted")
 			}
@@ -400,7 +400,7 @@ func (ai *AI) Trade(bought_in_same_candle, sold_in_same_candle, is_holding bool)
 			BreakEvenPrice = 0.0
 			BreakEvenFlagPrice = 0.0
 			ProfitConfirmationFlag = false
-			SellToSecureProfit = false
+			// SellToSecureProfit = false
 			return bought_in_same_candle, sold_in_same_candle, is_holding
 		}
 
