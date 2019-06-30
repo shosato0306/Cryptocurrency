@@ -271,8 +271,8 @@ func (df *DataFrameCandle) OptimizeEma() (performance float64, bestPeriod1 int, 
 	bestPeriod2 = 14
 
 	// for period1 := 5; period1 < 11; period1++ {
-	for period1 := 3; period1 < 5; period1++ {
-		for period2 := 5; period2 < 13; period2++ {
+	for period1 := 3; period1 < 8; period1++ {
+		for period2 := 8; period2 < 13; period2++ {
 			signalEvents := df.BackTestEma(period1, period2)
 			if signalEvents == nil {
 				continue
@@ -463,7 +463,7 @@ func (df *DataFrameCandle) OptimizeRsi() (performance float64, bestPeriod int, b
 	bestBuyThread, bestSellThread = 30.0, 70.0
 
 	// for period := 5; period < 25; period++ {
-	for period := 3; period < 25; period++ {
+	for period := 5; period < 25; period++ {
 		signalEvents := df.BackTestRsi(period, bestBuyThread, bestSellThread)
 		if signalEvents == nil {
 			continue
