@@ -16,7 +16,7 @@ golang 1.12.4
 
 You can see the candlestick chart according to the selected period.
 
-![image](https://user-images.githubusercontent.com/38198918/58756739-98851780-8539-11e9-8831-46360308ac64.png)
+![image](https://user-images.githubusercontent.com/38198918/61198305-49bfc580-a714-11e9-9022-6ad051daade2.png)
 
 The candlestick period can be selected from the following four. 
 
@@ -30,7 +30,7 @@ The candlestick period can be selected from the following four.
 You can also see the inditator on the price of the cryptocurrency.
 If necessary, you can change the values of the parameters used in each indicator.
 
-![image](https://user-images.githubusercontent.com/38198918/58756820-abe4b280-853a-11e9-9168-771610f5acb5.png)
+![Chart](https://user-images.githubusercontent.com/38198918/61198263-0b2a0b00-a714-11e9-817f-34a4c9b90e5c.png)
 
 This application supports the following indicators.
 
